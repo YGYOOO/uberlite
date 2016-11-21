@@ -9,6 +9,7 @@
   "dependencies": {
     "react": "15.3.2",
     "react-native": "0.33.0",
+    "react-native-animatable": "^0.6.1",
     "react-native-fileupload": "^1.2.0",
     "react-native-image-picker": "^0.22.10",
     "react-native-maps": "^0.11.0",
