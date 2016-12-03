@@ -1,0 +1,73 @@
+{
+  "project_info": {
+    "project_number": "728367311402",
+    "firebase_url": "https://uberlite-810d6.firebaseio.com",
+    "project_id": "uberlite-810d6",
+    "storage_bucket": "uberlite-810d6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:728367311402:android:68d404989104d410",
+        "android_client_info": {
+          "package_name": "com.uberlite_rider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "728367311402-5br5nkcd94aodds6tmauso4bb7jbqfcp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRAsU39yfMov9-6qH2Ggf1iWvLvg0C4wU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:728367311402:android:0ab4307297761c10",
+        "android_client_info": {
+          "package_name": "com.uberlite_driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "728367311402-5br5nkcd94aodds6tmauso4bb7jbqfcp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRAsU39yfMov9-6qH2Ggf1iWvLvg0C4wU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

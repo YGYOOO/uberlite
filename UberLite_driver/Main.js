@@ -9,22 +9,51 @@ import {themeColor, MKThemeColor} from './style/Theme.js';
 import {domain} from './url.js';
 
 var windowD = Dimensions.get('window');
-var getRidersInterval;
+var getRidersInterval, updateRegionInterval, sendMyGeoInterval;
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
+const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
 const VIEWING = 'VIEWING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING';
 
 export default class Main extends Component{
   constructor(){
     super();
+    var PushNotification = require('react-native-push-notification');
+    PushNotification.configure({
+        onRegister: (gcm_token) => {
+          this.setState({gcm_token});
+          console.log( 'TOKEN:', gcm_token );
+        },
+        onNotification: (notification) => {
+            console.log( 'NOTIFICATION:', notification );
+            if(notification.status === ACCEPTED){
+              this.setState({status: ACCEPTED});
+              this.judgeStatus(ACCEPTED);
+              this.getDriverInfo(notification.driver_email);
+            }
+            if(notification.gettingDriverGeo){
+              var rider_gcm_token = JSON.parse(notification.rider_gcm_token);
+              this.setState({rider_gcm_token});
+              sendMyGeoInterval = setInterval(() => {this.sendMyGeo(rider_gcm_token)}, 5000);
+            }
+            else if(notification.stopGettingDriverGeo){
+              clearInterval(sendMyGeoInterval);
+            }
+        },
+        senderID: "728367311402",
+        popInitialNotification: true,
+        requestPermissions: true,
+    });
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        var region = this.state.region;
+        var region = JSON.parse(JSON.stringify(this.state.region));
         region.latitude = position.coords.latitude;
         region.longitude = position.coords.longitude;
         this.setState({region});
-        this.setState({driverCoor: region});
+        this.setState({driverGeo: region});
         this.getRiders();
-        getRidersInterval = setInterval(() => {this.getRiders()}, 5000);
+        getRidersInterval = setInterval(() => {this.getRiders()}, 3000);
+        updateRegionInterval = setInterval(() => {this.updateGeo()}, 5000);
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
@@ -32,7 +61,9 @@ export default class Main extends Component{
   }
 
   state = {
-    driverCoor: {
+    gcm_token: {},
+    rider_gcm_token: {},
+    driverGeo: {
       latitude: 43,
       longitude: -91,
     },
@@ -45,16 +76,34 @@ export default class Main extends Component{
     riders_old:[],
     riders:[],
     startPoint: null,
-    status: VIEWING,
+    status: VIEWING
   };
 
   onRegionChange(region){
     this.setState({region});
   }
 
+  updateGeo(){
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // var region = JSON.parse(JSON.stringify(this.state.region));
+        // region.latitude = position.coords.latitude;
+        // region.longitude = position.coords.longitude;
+        // this.setState({region});
+
+        var driverGeo = JSON.parse(JSON.stringify(this.state.driverGeo));
+        driverGeo.latitude = position.coords.latitude;
+        driverGeo.longitude = position.coords.longitude;
+        this.setState({driverGeo});
+      },
+      (error) => alert(JSON.stringify(error)),
+      {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+    );
+  }
+
   getRiders(){
     $f.ajax({
-      url: domain + '/geo/riders/?radius=5000&latitude=' + this.state.driverCoor.latitude + '&longitude=' + this.state.driverCoor.longitude,
+      url: domain + '/geo/riders/?radius=5000&latitude=' + this.state.region.latitude + '&longitude=' + this.state.region.longitude,
       method: 'GET',
       success: function(result){
         var riders = this.state.riders.slice();
@@ -119,6 +168,22 @@ export default class Main extends Component{
     });
   }
 
+  sendMyGeo(rider_gcm_token){
+    $f.gcm({
+      key: FIREBASE_API_KEY,
+      token: rider_gcm_token.token,
+      data: {
+        driverGeo: this.state.driverGeo,
+      },
+      success: () => {
+        console.log('Send gcm succeeded.');
+      },
+      error: () => {
+
+      }
+    });
+  }
+
   render() {
     let riderRequests = (() => {
       if(this.state.status !== VIEWING) return;
@@ -135,8 +200,9 @@ export default class Main extends Component{
                 clearInterval(getRidersInterval);
                 var body = {
                   email: this.props.email,
-                  currentLatitude: this.state.driverCoor.latitude,
-                  currentLongitude : this.state.driverCoor.longitude
+                  currentLatitude: this.state.driverGeo.latitude,
+                  currentLongitude : this.state.driverGeo.longitude,
+                  driver_gcm_token: this.state.gcm_token
                 };
                 $f.ajax({
                   url: domain + '/ridingRequests/' + rider.key,
@@ -144,7 +210,7 @@ export default class Main extends Component{
                   method: 'PUT',
                   success: (result) => {
                     if(result.success){
-                      
+
                     }
                     else alert('Processing failed, please check your network');
                   },

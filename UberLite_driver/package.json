@@ -15,7 +15,8 @@
     "react-native-maps": "^0.11.0",
     "react-native-material-design": "^0.3.7",
     "react-native-material-kit": "^0.3.3",
-    "react-native-popup-dialog": "^0.2.12"
+    "react-native-popup-dialog": "^0.2.12",
+    "react-native-push-notification": "^2.2.1"
   },
   "jest": {
     "preset": "jest-react-native"

@@ -25,8 +25,8 @@ export default class Main extends Component{
           this.setState({gcm_token});
           console.log( 'TOKEN:', gcm_token );
 
-          console.log(this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ')));
-          this.setState({directionGeo: this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ'))});
+          // console.log(this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ')));
+          // this.setState({directionGeo: this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ'))});
         },
         onNotification: (notification) => {
             console.log( 'NOTIFICATION:', notification );

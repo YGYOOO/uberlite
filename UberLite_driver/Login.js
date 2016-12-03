@@ -7,7 +7,6 @@ import {themeColor, MKThemeColor} from './style/Theme.js';
 import {$f} from './modules/functions.js';
 import {domain} from './url.js';
 
-
 var window = Dimensions.get('window');
 
 export default class Login extends Component{
