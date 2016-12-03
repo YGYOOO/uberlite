@@ -4,13 +4,14 @@ import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-mater
 import MapView from 'react-native-maps';
 import PlacesAutocomplete from './components/PlacesAutocomplete';
 import * as Animatable from 'react-native-animatable';
-var Spinner = require('react-native-spinkit');
+import Spinner from 'react-native-spinkit';
 
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
 import {domain} from './url.js';
-
+import polyline from 'polyline';
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
+const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
 const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING';
 
 var windowDimension = Dimensions.get('window');
@@ -22,7 +23,10 @@ export default class Main extends Component{
     PushNotification.configure({
         onRegister: (gcm_token) => {
           this.setState({gcm_token});
-          // console.log( 'TOKEN:', gcm_token );
+          console.log( 'TOKEN:', gcm_token );
+
+          console.log(this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ')));
+          this.setState({directionGeo: this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ'))});
         },
         onNotification: (notification) => {
             console.log( 'NOTIFICATION:', notification );
@@ -30,6 +34,13 @@ export default class Main extends Component{
               this.setState({status: ACCEPTED});
               this.judgeStatus(ACCEPTED);
               this.getDriverInfo(notification.driver_email);
+              var driver_gcm_token = JSON.parse(notification.driver_gcm_token);
+              this.setState(driver_gcm_token);
+              this.startGettingDriverGeo(driver_gcm_token);
+            }
+            if(notification.driverGeo){
+              var driverGeo = JSON.parse(notification.driverGeo);
+              this.setState({driverGeo});
             }
         },
         senderID: "728367311402",
@@ -39,11 +50,12 @@ export default class Main extends Component{
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        var startLocation = this.state.startLocation;
-        startLocation.latitude = position.coords.latitude;
-        startLocation.longitude = position.coords.longitude;
-        this.setState({startLocation});
-        this.setState({driverCoor: startLocation});
+        var region = this.state.region;
+        region.latitude = position.coords.latitude;
+        region.longitude = position.coords.longitude;
+        this.setState({region});
+        this.setState({startLocation: region});
+        this.setState({driverCoor: region});
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
@@ -53,20 +65,35 @@ export default class Main extends Component{
   state = {
     status: VIEWING,
     gcm_token: '',
-    riderCoor: {
+    driver_gcm_token: '',
+    riderGeo: {
       latitude: 43,
       longitude: -91
     },
-    startLocation: {
+    driverGeo: null,
+    region: {
       latitude: 43,
       longitude: -91,
       latitudeDelta: 0.025,
       longitudeDelta: 0.0121
     },
+    startLocation: {
+      latitude: 43,
+      longitude: -91
+    },
     endLocation: {
       latitude: 43,
       longitude: -91
     },
+    directionGeo: [{
+      latitude: 43.8178,
+      longitude: -91.2292
+      },
+      {
+        latitude: 43.814,
+        longitude: -91.2292
+      }
+    ],
     startLocationName:'',
     show_searcher_startingPoint: true,
     show_searcher_destination: false,
@@ -76,13 +103,27 @@ export default class Main extends Component{
     driverInfo: null,
   };
 
+  convertDirectionGeos(geos){
+    var newGeos = geos.map(function(geo){
+      return {
+        latitude: geo[0],
+        longitude: geo[1]
+      };
+    });
+    return newGeos;
+  }
+
   navLogin(){
     this.props.updateTitle('Login');
     this.props.navigator.pop();
   }
 
-  onRegionChange(startLocation){
-    this.setState({startLocation});
+  onRegionChange(region){
+    this.setState({region});
+    if(this.state.status === VIEWING){
+      this.setState({startLocationName: ''});
+      this.setState({startLocation: region});
+    }
   }
 
   setCoor(){
@@ -163,6 +204,24 @@ export default class Main extends Component{
     });
   }
 
+  startGettingDriverGeo(driver_gcm_token){
+    console.log(driver_gcm_token);
+    $f.gcm({
+      key: FIREBASE_API_KEY,
+      token: driver_gcm_token.token,
+      data: {
+        gettingDriverGeo: true,
+        rider_gcm_token: this.state.gcm_token
+      },
+      success: () => {
+        console.log('Send gcm succeeded.');
+      },
+      error: () => {
+
+      }
+    });
+  }
+
   render() {
     const searcher_startingPoint = this.state.show_searcher_startingPoint ? (
       <Card style={styles.startPointSearcher}>
@@ -175,6 +234,7 @@ export default class Main extends Component{
             startLocation.latitude = result.results[0].geometry.location.lat;
             startLocation.longitude = result.results[0].geometry.location.lng;
             this.setState({startLocation});
+            this.setState({region: startLocation})
             this.setState({show_searcher_destination: true});
           }}
           value={this.state.startLocationName}
@@ -219,16 +279,25 @@ export default class Main extends Component{
     const driverBoard = (this.state.show_driverBoard && this.state.driverInfo)  ? (
       <Animatable.View animation="fadeInDown" duration={700}>
         <Card style={styles.driverBoard}>
-          <Text>{'Driver ' + this.state.driverInfo.full_name + 'is on the way.'}</Text>
+          <Text>{'Driver ' + this.state.driverInfo.full_name + ' is on the way.'}</Text>
         </Card>
       </Animatable.View>
+    ) : null;
+
+    const driverMarker = this.state.driverGeo ? (
+      <MapView.Marker
+        coordinate={this.state.driverGeo}
+        image={require('./img/car_left.png')}
+        anchor={{x: .5, y:.5}}
+      >
+      </MapView.Marker>
     ) : null;
 
     return (
       <View style ={styles.container}>
         <MapView
           style={styles.map}
-          region={this.state.startLocation}
+          region={this.state.region}
           showsUserLocation={true}
           onRegionChange={this.onRegionChange.bind(this)}
         >
@@ -239,6 +308,19 @@ export default class Main extends Component{
             <MapView.Callout onPress={this.setCoor.bind(this)}>
             </MapView.Callout>
           </MapView.Marker>
+          <MapView.Marker
+            coordinate={this.state.endLocation}
+            pinColor={"rgb(68, 146, 239)"}
+          >
+          </MapView.Marker>
+          {driverMarker}
+          <MapView.Polyline
+              key={1}
+              coordinates={this.state.directionGeo}
+              strokeColor="#000"
+              fillColor="rgba(255,0,0,0.5)"
+              strokeWidth={1}
+            />
         </MapView>
         <View style={styles.searchers}>
           {searcher_startingPoint}

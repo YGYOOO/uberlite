@@ -55,7 +55,7 @@ export default class UberLite_rider extends Component {
         navigationBar={
           <Toolbar title={this.state.title}/>
           }
-        initialRoute={{title: 'Login'}}
+        initialRoute={{title: 'Main'}}
         renderScene={this.navigatorRenderScene.bind(this)}
         configureScene={(route) => {
           // if(route.title == 'Registration')
