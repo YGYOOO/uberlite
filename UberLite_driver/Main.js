@@ -7,6 +7,7 @@ import * as Animatable from 'react-native-animatable';
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
 import {domain} from './url.js';
+import polyline from 'polyline';
 
 var windowD = Dimensions.get('window');
 var getRidersInterval, updateRegionInterval, sendMyGeoInterval;
@@ -21,10 +22,11 @@ export default class Main extends Component{
     PushNotification.configure({
         onRegister: (gcm_token) => {
           this.setState({gcm_token});
-          console.log( 'TOKEN:', gcm_token );
+          // console.log( 'TOKEN:', gcm_token );
+          // this.setState({directionGeos: this.convertDirectionGeos(polyline.decode('gdmjGzdykPsB@GrFEdHGdIdAhIbAdId@|Dn@~FWDw@JoDd@c@R}APiFh@_DPa\\f@wIHeAAw@GuHw@@z@rA~FnDhOJh@@|FCpPmIC}EBkHDaH@yAA?fC?lCjA?xABzAJjEF`B?tFE'))});
         },
         onNotification: (notification) => {
-            console.log( 'NOTIFICATION:', notification );
+            // console.log( 'NOTIFICATION:', notification );
             if(notification.status === ACCEPTED){
               this.setState({status: ACCEPTED});
               this.judgeStatus(ACCEPTED);
@@ -73,11 +75,24 @@ export default class Main extends Component{
       latitudeDelta: 0.025,
       longitudeDelta: 0.0121,
     },
+    startLocation: null,
+    endLocation: null,
+    directionGeos:null,
     riders_old:[],
     riders:[],
-    startPoint: null,
-    status: VIEWING
+    status: VIEWING,
+    show_btn_pickedDriverUp: false
   };
+
+  convertDirectionGeos(geos){
+    var newGeos = geos.map(function(geo){
+      return {
+        latitude: geo[0],
+        longitude: geo[1]
+      };
+    });
+    return newGeos;
+  }
 
   onRegionChange(region){
     this.setState({region});
@@ -95,6 +110,13 @@ export default class Main extends Component{
         driverGeo.latitude = position.coords.latitude;
         driverGeo.longitude = position.coords.longitude;
         this.setState({driverGeo});
+
+        if(this.state.status === ACCEPTED && this.state.startLocation && this.state.endLocation){
+          let distance = $f.distance(driverGeo.latitude, driverGeo.longitude, this.state.startLocation.latitude, this.state.startLocation.longitude, 'K')
+          if(distance < 0.2){
+            this.setState({show_btn_pickedDriverUp: true});
+          }
+        }
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
@@ -184,6 +206,21 @@ export default class Main extends Component{
     });
   }
 
+  getDirection(start, end){
+    let origin = start.latitude + ',' + start.longitude;
+    let destination = end.latitude + ',' + end.longitude;
+    $f.ajax({
+      url: 'https://maps.googleapis.com/maps/api/directions/json?origin=' + origin + '&destination=' + destination +'&key=' + GOOGLE_API_KEY,
+      method: 'GET',
+      success: (result) => {
+        this.setState({directionGeos: this.convertDirectionGeos(polyline.decode(result.routes[0].overview_polyline.points))});
+      },
+      error: (err) => {
+
+      }
+    });
+  }
+
   render() {
     let riderRequests = (() => {
       if(this.state.status !== VIEWING) return;
@@ -210,7 +247,9 @@ export default class Main extends Component{
                   method: 'PUT',
                   success: (result) => {
                     if(result.success){
-
+                      this.getDirection(this.state.driverGeo, result.data.startLocation);
+                      this.setState({startLocation: result.data.startLocation});
+                      this.setState({endLocation: result.data.endLocation});
                     }
                     else alert('Processing failed, please check your network');
                   },
@@ -229,12 +268,42 @@ export default class Main extends Component{
       }.bind(this));
     })();
 
-    const startPointMarker = this.state.startPoint ? (
+    const startPointMarker = this.state.startLocation ? (
       <MapView.Marker
-        coordinate={this.state.startPoint}
+        coordinate={this.state.startLocation}
         title={'Start Point'}
       >
       </MapView.Marker>
+    ) : null;
+
+    const endPointMarker = this.state.endLocation ? (
+      <MapView.Marker
+        coordinate={this.state.endLocation}
+        title={'End Point'}
+        pinColor={"rgb(68, 146, 239)"}
+      >
+      </MapView.Marker>
+    ) : null;
+
+    const direction = this.state.directionGeos ? (
+      <MapView.Polyline
+          key={1}
+          coordinates={this.state.directionGeos}
+          strokeColor="rgb(87,146,251)"
+          strokeWidth={5}
+        />
+    ) : null;
+
+    const btn_pickedDriverUp = this.state.show_btn_pickedDriverUp ? (
+      <Animatable.View animation="bounceInDown" duration={500}>
+        <Button style={styles.btn_pickedDriverUp}  text="Picked Driver Up" primary={themeColor}
+          onPress={() => {
+            this.setState({status: RIDING});
+            this.setState({show_btn_pickedDriverUp: false});
+            this.getDirection(this.state.startLocation, this.state.endLocation);
+          }} raised theme={'dark'}
+        />
+      </Animatable.View>
     ) : null;
 
     return (
@@ -247,10 +316,13 @@ export default class Main extends Component{
           animateToRegion={{region: this.state.region, duration: this.state}}
         >
           {startPointMarker}
+          {endPointMarker}
+          {direction}
         </MapView>
         <View style={styles.riderList}>
           <ScrollView>
             {riderRequests}
+            {btn_pickedDriverUp}
           </ScrollView>
         </View>
       </View>
@@ -281,6 +353,10 @@ const styles = StyleSheet.create({
   rider: {
     alignItems: 'center',
     padding: 10,
+    width: windowD.width * .9
+  },
+  btn_pickedDriverUp: {
+    alignItems: 'center',
     width: windowD.width * .9
   }
 });

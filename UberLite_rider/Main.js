@@ -24,7 +24,6 @@ export default class Main extends Component{
         onRegister: (gcm_token) => {
           this.setState({gcm_token});
           console.log( 'TOKEN:', gcm_token );
-
           // console.log(this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ')));
           // this.setState({directionGeo: this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ'))});
         },
@@ -81,10 +80,7 @@ export default class Main extends Component{
       latitude: 43,
       longitude: -91
     },
-    endLocation: {
-      latitude: 43,
-      longitude: -91
-    },
+    endLocation: null,
     directionGeo: [{
       latitude: 43.8178,
       longitude: -91.2292
@@ -293,6 +289,14 @@ export default class Main extends Component{
       </MapView.Marker>
     ) : null;
 
+    const endPointMarker = this.state.endLocation ? (
+      <MapView.Marker
+        coordinate={this.state.endLocation}
+        pinColor={"rgb(68, 146, 239)"}
+      >
+      </MapView.Marker>
+    ) : null;
+
     return (
       <View style ={styles.container}>
         <MapView
@@ -308,19 +312,15 @@ export default class Main extends Component{
             <MapView.Callout onPress={this.setCoor.bind(this)}>
             </MapView.Callout>
           </MapView.Marker>
-          <MapView.Marker
-            coordinate={this.state.endLocation}
-            pinColor={"rgb(68, 146, 239)"}
-          >
-          </MapView.Marker>
+          {endPointMarker}
           {driverMarker}
-          <MapView.Polyline
+          {/* <MapView.Polyline
               key={1}
               coordinates={this.state.directionGeo}
               strokeColor="#000"
               fillColor="rgba(255,0,0,0.5)"
               strokeWidth={1}
-            />
+            /> */}
         </MapView>
         <View style={styles.searchers}>
           {searcher_startingPoint}
