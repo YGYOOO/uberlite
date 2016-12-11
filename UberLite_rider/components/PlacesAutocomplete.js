@@ -20,8 +20,10 @@ export default class PlacesAutocomplete extends Component {
         // updateValue={this.props.updateValue}
         value={this.props.value}
         onPress={(data) => {
+          let url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query=' + data.description + '&key=' + GOOGLE_API_KEY;
+          console.log(url);
           $f.ajax({
-            url: 'https://maps.googleapis.com/maps/api/geocode/json?address=' + data.description + '&key=' + GOOGLE_API_KEY,
+            url: url,
             method: 'GET',
             success: (result) => {
               this.props.callback(result);

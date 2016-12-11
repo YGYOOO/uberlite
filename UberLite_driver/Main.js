@@ -128,18 +128,26 @@ export default class Main extends Component{
       url: domain + '/geo/riders/?radius=5000&latitude=' + this.state.region.latitude + '&longitude=' + this.state.region.longitude,
       method: 'GET',
       success: function(result){
-        var riders = this.state.riders.slice();
-        var newriders = result.data.filter(function(r1){
-          var finded = true;
-          riders.forEach(function(r2){
-            if(r1.key == r2.key) finded = false;
+        let riders = this.state.riders.slice().filter(function(r1){
+          let finded = false;
+          result.data.forEach(function(r2){
+            if(r1.key == r2.key) finded = true;
           });
           return finded;
         });
-        if(newriders){
-          riders = riders.concat(newriders);
+
+        let newRiders = result.data.filter(function(r1){
+          let finded = false;
+          riders.forEach(function(r2){
+            if(r1.key == r2.key) finded = true;
+          });
+          return !finded;
+        });
+
+        if(newRiders){
+          riders = riders.concat(newRiders);
           this.setState({riders});
-          newriders.forEach(function(r){
+          newRiders.forEach(function(r){
             this.getRiderInfo(r);
           }.bind(this));
         }
@@ -251,7 +259,7 @@ export default class Main extends Component{
                       this.setState({startLocation: result.data.startLocation});
                       this.setState({endLocation: result.data.endLocation});
                     }
-                    else alert('Processing failed, please check your network');
+                    else alert(result.msg);
                   },
                   error: (err) => {
                     alert('Processing failed, please check your network');
@@ -296,13 +304,15 @@ export default class Main extends Component{
 
     const btn_pickedDriverUp = this.state.show_btn_pickedDriverUp ? (
       <Animatable.View animation="bounceInDown" duration={500}>
-        <Button style={styles.btn_pickedDriverUp}  text="Picked Driver Up" primary={themeColor}
-          onPress={() => {
-            this.setState({status: RIDING});
-            this.setState({show_btn_pickedDriverUp: false});
-            this.getDirection(this.state.startLocation, this.state.endLocation);
-          }} raised theme={'dark'}
-        />
+        <View style={styles.btn_pickedDriverUp}>
+          <Button text="Picked Driver Up" primary={themeColor}
+            onPress={() => {
+              this.setState({status: RIDING});
+              this.setState({show_btn_pickedDriverUp: false});
+              this.getDirection(this.state.startLocation, this.state.endLocation);
+            }} raised
+          />
+        </View>
       </Animatable.View>
     ) : null;
 
@@ -322,9 +332,9 @@ export default class Main extends Component{
         <View style={styles.riderList}>
           <ScrollView>
             {riderRequests}
-            {btn_pickedDriverUp}
           </ScrollView>
         </View>
+        {btn_pickedDriverUp}
       </View>
     );
   }
@@ -353,10 +363,10 @@ const styles = StyleSheet.create({
   rider: {
     alignItems: 'center',
     padding: 10,
-    width: windowD.width * .9
+    width: windowD.width * .9,
+    marginBottom: 0
   },
   btn_pickedDriverUp: {
-    alignItems: 'center',
     width: windowD.width * .9
   }
 });

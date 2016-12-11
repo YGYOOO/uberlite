@@ -8,7 +8,7 @@ import Spinner from 'react-native-spinkit';
 
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
-import {domain} from './url.js';
+import {domain, mapAPI} from './url.js';
 import polyline from 'polyline';
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
 const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
@@ -93,6 +93,8 @@ export default class Main extends Component{
     startLocationName:'',
     show_searcher_startingPoint: true,
     show_searcher_destination: false,
+    show_priceEstimationBoard: false,
+    estimatedPrice: '',
     show_btn_askCar: false,
     show_watingSpinner: false,
     show_driverBoard: false,
@@ -122,10 +124,10 @@ export default class Main extends Component{
     }
   }
 
-  setCoor(){
+  fillStartLocation(){
     let latitude = this.state.startLocation.latitude, longitude = this.state.startLocation.longitude;
     $f.ajax({
-      url: 'https://maps.googleapis.com/maps/api/geocode/json?latlng=' + latitude + ',' + longitude + '&key=' + GOOGLE_API_KEY,
+      url: mapAPI + '/geocode/json?latlng=' + latitude + ',' + longitude + '&key=' + GOOGLE_API_KEY,
       method: 'GET',
       success: (result) => {
         let startLocationName = result.results[0].formatted_address;
@@ -138,11 +140,61 @@ export default class Main extends Component{
     });
   }
 
+  getTotalPrice(){
+    let origins = this.state.startLocation.latitude + ',' + this.state.startLocation.longitude;
+    let destinations = this.state.endLocation.latitude + ',' + this.state.endLocation.longitude;
+    let url = mapAPI + '/distancematrix/json?origins=' + origins + '&destinations=' + destinations + '&mode= driving&key=' + GOOGLE_API_KEY
+    $f.ajax({
+      url: url,
+      method: 'GET',
+      success: (result) => {
+        if(result.status === 'OK'){
+          let totalMile = result.rows[0].elements[0].distance.text.split(' ')[0];
+          let totalTime = result.rows[0].elements[0].duration.text.split(' ')[0];
+          let d = new Date();
+          let days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+          let startDay = days[d.getDay()];
+          let startTime = d.getHours() + d.getSeconds()/60;
+          let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
+          console.log(url);
+          $f.ajax({
+            url: url,
+            method: 'GET',
+            success: (result) => {
+              if(result.success){
+                let estimatedPrice = result.data.totalPrice;
+                this.setState({estimatedPrice});
+              }
+              else{
+                alert('Sending request failed, please check your network');
+                console.err(result.msg);
+              }
+            },
+            error: (err) => {
+              console.err(err);
+              alert('Sending request failed, please check your network');
+              this.navLogin();
+            }
+          });
+        }
+        else{
+          alert('Sending request failed, please check your network');
+        }
+      },
+      error: (err) => {
+        console.err(err);
+        alert('Sending request failed, please check your network');
+        this.navLogin();
+      }
+    });
+  }
+
   postRidingRequest(){
     this.setState({show_watingSpinner: true});
     this.setState({show_searcher_startingPoint: false});
     this.setState({show_searcher_destination: false});
     this.setState({show_btn_askCar: false});
+    this.setState({show_priceEstimationBoard: false});
 
     var body = {
       startLocation: {
@@ -220,12 +272,13 @@ export default class Main extends Component{
 
   render() {
     const searcher_startingPoint = this.state.show_searcher_startingPoint ? (
-      <Card style={styles.startPointSearcher}>
+      <Card>
         <PlacesAutocomplete
           width={windowDimension.width}
           height={30}
           placeholder={'Enter Starting Point'}
           callback={(result) => {
+            console.log(1);
             var startLocation = JSON.parse(JSON.stringify(this.state.startLocation));
             startLocation.latitude = result.results[0].geometry.location.lat;
             startLocation.longitude = result.results[0].geometry.location.lng;
@@ -239,7 +292,7 @@ export default class Main extends Component{
     ) : null;
 
     const searcher_destination = this.state.show_searcher_destination ? (
-      <Animatable.View animation="bounceInDown" duration={500}>
+      <Animatable.View animation="fadeInDown" duration={350}>
         <Card style={styles.endPointSearcher}>
           <PlacesAutocomplete
             width={windowDimension.width}
@@ -250,15 +303,25 @@ export default class Main extends Component{
                 latitude: result.results[0].geometry.location.lat,
                 longitude: result.results[0].geometry.location.lng
               }});
+              this.getTotalPrice();
               this.setState({show_btn_askCar: true});
+              this.setState({show_priceEstimationBoard: true});
             }}
           />
         </Card>
       </Animatable.View>
     ) : null;
 
+    const priceEstimationBoard = this.state.show_priceEstimationBoard ? (
+      <Animatable.View animation="fadeInUp" duration={350}>
+        <Card style={styles.priceEstimationBoard}>
+          <Text>{this.state.estimatedPrice ? 'Estimated Price: ' + this.state.estimatedPrice : 'Estimating Price...'}</Text>
+        </Card>
+      </Animatable.View>
+    ) : null;
+
     const btn_askCar = this.state.show_btn_askCar ? (
-      <Animatable.View animation="bounceInDown" duration={500}>
+      <Animatable.View animation="fadeInUp" duration={350}>
         <Button text="ASK FOR A CAR" primary={themeColor} onPress={this.postRidingRequest.bind(this)} raised theme={'dark'}/>
       </Animatable.View>
     ) : null;
@@ -273,7 +336,7 @@ export default class Main extends Component{
     ) : null;
 
     const driverBoard = (this.state.show_driverBoard && this.state.driverInfo)  ? (
-      <Animatable.View animation="fadeInDown" duration={700}>
+      <Animatable.View animation="fadeInDown" duration={500}>
         <Card style={styles.driverBoard}>
           <Text>{'Driver ' + this.state.driverInfo.full_name + ' is on the way.'}</Text>
         </Card>
@@ -309,7 +372,7 @@ export default class Main extends Component{
             coordinate={this.state.startLocation}
             title={'Get on at here'}
           >
-            <MapView.Callout onPress={this.setCoor.bind(this)}>
+            <MapView.Callout onPress={this.fillStartLocation.bind(this)}>
             </MapView.Callout>
           </MapView.Marker>
           {endPointMarker}
@@ -325,6 +388,9 @@ export default class Main extends Component{
         <View style={styles.searchers}>
           {searcher_startingPoint}
           {searcher_destination}
+        </View>
+        <View style={styles.confirm}>
+          {priceEstimationBoard}
           {btn_askCar}
         </View>
         <View style={styles.driverBoardView}>
@@ -363,6 +429,16 @@ const styles = StyleSheet.create({
   },
   endPointSearcher: {
     marginTop: 0
+  },
+  confirm: {
+    position: 'absolute',
+    bottom: 10,
+    width: windowDimension.width
+  },
+  priceEstimationBoard: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    marginBottom: 3
   },
   shade: {
     position: 'absolute',
