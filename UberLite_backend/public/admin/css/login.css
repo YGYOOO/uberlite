@@ -1,0 +1,25 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+.login{
+  width:430px;
+  height:305px;
+  margin:0 auto !important;
+  margin-top: 70px !important;
+  padding: 30px;
+}
+
+.login > .title{
+  font-size: 35px;
+}
+
+.login > .login-btn {
+  text-align: center;
+}
+
+.login > .login-btn > .btn{
+  width:320px;
+  margin-top:10px;
+}

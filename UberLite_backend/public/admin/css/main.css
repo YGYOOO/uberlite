@@ -1,0 +1,43 @@
+.user-table{
+  margin: 15px 40px;
+}
+
+.user-table td.authorized > label{
+  margin-left: 6px;
+}
+
+.user-table td.active > label{
+  margin-left: 6px;
+}
+
+.user-table .info{
+  cursor: pointer;
+}
+
+.driver-info{
+  width: 700px;
+  margin: 20px auto;
+}
+
+.driver-info .approve{
+  text-align: center;
+  display: none;
+}
+
+.driver-info input{
+  color: black !important;
+}
+
+.rider-info{
+  width: 700px;
+  margin: 20px auto;
+}
+
+.rider-info .approve{
+  text-align: center;
+  display: none;
+}
+
+.rider-info input{
+  color: black !important;
+}

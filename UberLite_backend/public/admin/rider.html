@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Driver Management</title>
+    <link rel="stylesheet" href="../admin/css/materialize.min.css">
+    <link rel="stylesheet" href="../admin/css/main.css">
+    <link rel="stylesheet" href="../admin/css/font-awesome.min.css">
+  </head>
+  <body class="grey lighten-2">
+    <nav>
+    <div class="nav-wrapper teal">
+      <a href="#" class="brand-logo center">Uber Lite</a>
+      <ul id="nav-mobile" class="left hide-on-med-and-down">
+        <li><a href="/management/driver">Driver Management</a></li>
+        <li class="active"><a href="/management/rider">Rider Management</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="user-table card-panel grey lighten-5">
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Password</th>
+          <th>Active</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+  <script src="../admin/js/materialize.min.js"></script>
+  <script src="../admin/js/main.js"></script>
+  <script>
+    $(document).ready(function(){
+      getAllRiders($('.user-table tbody'), function(){
+        $('.user-table .info').on('click',function(e){
+          var id = $(e.target).closest('tr').find('.active').children('input').attr('id').replace('driver_active_', '');
+          localStorage.setItem('info_riderId', id);
+          window.open('/management/riderInfo')
+        });
+      });
+    });
+  </script>
+  </body>
+</html>

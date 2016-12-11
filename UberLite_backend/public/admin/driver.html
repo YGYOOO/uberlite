@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Driver Management</title>
+    <link rel="stylesheet" href="../admin/css/materialize.min.css">
+    <link rel="stylesheet" href="../admin/css/main.css">
+    <link rel="stylesheet" href="../admin/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  </head>
+  <body class="grey lighten-2">
+    <nav>
+    <div class="nav-wrapper teal">
+      <a href="#" class="brand-logo center">Uber Lite</a>
+      <ul id="nav-mobile" class="left hide-on-med-and-down">
+        <li class="active"><a href="/management/driver">Driver Management</a></li>
+        <li><a href="/management/rider">Rider Management</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="row">
+    <div class="col s3"></div>
+    <div class="input-field col s6">
+      <i class="material-icons prefix">search</i>
+      <input id="search" type="text" required>
+      <label for="search"></label>
+    </div>
+  </div>
+  <div class="user-table card-panel grey lighten-5">
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Password</th>
+          <th>Score</th>
+          <th>Authorized</th>
+          <th>Active</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+  <script src="../admin/js/materialize.min.js"></script>
+  <script src="../admin/js/main.js"></script>
+  <script>
+    $(document).ready(function(){
+      getAllDrivers($('.user-table tbody'), function(){
+        $('.user-table .info').on('click',function(e){
+          var id = $(e.target).closest('tr').find('.authorized').children('input').attr('id').replace('driver_authorized_', '');
+          localStorage.setItem('info_driverId', id);
+          window.open('/management/driverInfo')
+        });
+
+        $('.user-table .active').on('click', 'input', function(e){
+          var checked = true;
+          if($(e.target).attr('checked')){
+            $(e.target).removeAttr('checked');
+            checked = false;
+          }
+          else{
+            $(e.target).attr('checked', 'checked');
+          }
+          var id = e.target.id.replace('driver_active_', '');
+          active($(e.target), id, checked);
+        })
+
+        $('#search').on('keyup', function(e){
+          if(e.which == 13){
+            console.log(1);
+            searchDrivers($('.user-table tbody'), $('#search').val(), function(){});
+          }
+        });
+      });
+    });
+  </script>
+  </body>
+</html>
