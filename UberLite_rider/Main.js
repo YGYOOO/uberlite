@@ -15,6 +15,7 @@ const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
 const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING';
 
 var windowDimension = Dimensions.get('window');
+var getRestTimeInterval;
 
 export default class Main extends Component{
   constructor(){
@@ -28,14 +29,23 @@ export default class Main extends Component{
           // this.setState({directionGeo: this.convertDirectionGeos(polyline.decode('gdmjGneykP?oFfJwQ'))});
         },
         onNotification: (notification) => {
-            console.log( 'NOTIFICATION:', notification );
-            if(notification.status === ACCEPTED){
-              this.setState({status: ACCEPTED});
-              this.judgeStatus(ACCEPTED);
-              this.getDriverInfo(notification.driver_email);
-              var driver_gcm_token = JSON.parse(notification.driver_gcm_token);
-              this.setState(driver_gcm_token);
-              this.startGettingDriverGeo(driver_gcm_token);
+            // console.log( 'NOTIFICATION:', notification );
+            switch(notification.status){
+              case ACCEPTED:
+                this.setState({status: ACCEPTED});
+                this.judgeStatus(ACCEPTED);
+                this.getDriverInfo(notification.driver_email);
+                var driver_gcm_token = JSON.parse(notification.driver_gcm_token);
+                this.setState(driver_gcm_token);
+                this.startGettingDriverGeo(driver_gcm_token);
+                break;
+              case RIDING:
+                this.setState({status: RIDING});
+                this.setState({show_driverBoard: false});
+                this.setState({show_restTimeBoard: true});
+                this.getRestTime();
+                getRestTimeInterval = setInterval(this.getRestTime.bind(this), 10000);
+                break;
             }
             if(notification.driverGeo){
               var driverGeo = JSON.parse(notification.driverGeo);
@@ -94,6 +104,8 @@ export default class Main extends Component{
     show_searcher_startingPoint: true,
     show_searcher_destination: false,
     show_priceEstimationBoard: false,
+    show_restTimeBoard: false,
+    restTime: null,
     estimatedPrice: '',
     show_btn_askCar: false,
     show_watingSpinner: false,
@@ -156,7 +168,6 @@ export default class Main extends Component{
           let startDay = days[d.getDay()];
           let startTime = d.getHours() + d.getSeconds()/60;
           let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
-          console.log(url);
           $f.ajax({
             url: url,
             method: 'GET',
@@ -238,7 +249,6 @@ export default class Main extends Component{
       url: domain + '/drivers/' + driver_email,
       method: 'GET',
       success: (result) => {
-        console.log(result);
         if(result.success){
           this.setState({driverInfo: result.data});
         }
@@ -266,6 +276,31 @@ export default class Main extends Component{
       },
       error: () => {
 
+      }
+    });
+  }
+
+  getRestTime(){
+    let origins = this.state.driverGeo.latitude + ',' + this.state.driverGeo.longitude;
+    let destinations = this.state.endLocation.latitude + ',' + this.state.endLocation.longitude;
+    let url = mapAPI + '/distancematrix/json?origins=' + origins + '&destinations=' + destinations + '&mode= driving&key=' + GOOGLE_API_KEY
+    $f.ajax({
+      url: url,
+      method: 'GET',
+      success: (result) => {
+        if(result.status === 'OK'){
+          // let totalMile = result.rows[0].elements[0].distance.text.split(' ')[0];
+          let restTime = result.rows[0].elements[0].duration.text.split(' ')[0];
+          this.setState({restTime})
+        }
+        else{
+          alert('Sending request failed, please check your network');
+        }
+      },
+      error: (err) => {
+        console.err(err);
+        alert('Sending request failed, please check your network');
+        this.navLogin();
       }
     });
   }
@@ -337,8 +372,16 @@ export default class Main extends Component{
 
     const driverBoard = (this.state.show_driverBoard && this.state.driverInfo)  ? (
       <Animatable.View animation="fadeInDown" duration={500}>
-        <Card style={styles.driverBoard}>
+        <Card style={styles.infoBoard}>
           <Text>{'Driver ' + this.state.driverInfo.full_name + ' is on the way.'}</Text>
+        </Card>
+      </Animatable.View>
+    ) : null;
+
+    const restTimeBoard = (this.state.show_restTimeBoard && this.state.restTime)  ? (
+      <Animatable.View animation="fadeInDown" duration={500}>
+        <Card style={styles.infoBoard}>
+          <Text>{'About ' + this.state.restTime + ' min to destination.'}</Text>
         </Card>
       </Animatable.View>
     ) : null;
@@ -395,6 +438,7 @@ export default class Main extends Component{
         </View>
         <View style={styles.driverBoardView}>
           {driverBoard}
+          {restTimeBoard}
         </View>
         {watingSpinner}
       </View>
@@ -468,7 +512,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: windowDimension.width
   },
-  driverBoard: {
+  infoBoard: {
     alignItems: 'center',
     padding: 10,
     paddingTop: 20,

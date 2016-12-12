@@ -310,6 +310,19 @@ export default class Main extends Component{
               this.setState({status: RIDING});
               this.setState({show_btn_pickedDriverUp: false});
               this.getDirection(this.state.startLocation, this.state.endLocation);
+              $f.gcm({
+                key: FIREBASE_API_KEY,
+                token: this.state.rider_gcm_token.token,
+                data: {
+                  status: RIDING,
+                },
+                success: () => {
+                  console.log('Send gcm succeeded.');
+                },
+                error: () => {
+
+                }
+              });
             }} raised
           />
         </View>
