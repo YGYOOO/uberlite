@@ -1,0 +1,4 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+  "eslint.options": { "configFile": "/Users/IVAN/Documents/workspace-ReactNative/uberlite/UberLite_rider/.eslintrc.js" }
+}

@@ -14,8 +14,8 @@ const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
 const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
 const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING';
 
-var windowDimension = Dimensions.get('window');
-var getRestTimeInterval;
+let windowDimension = Dimensions.get('window');
+let getRestTimeInterval, updateRegionInterval;
 
 export default class Main extends Component{
   constructor(){
@@ -49,7 +49,9 @@ export default class Main extends Component{
             }
             if(notification.driverGeo){
               var driverGeo = JSON.parse(notification.driverGeo);
-              this.setState({driverGeo});
+              this.setState({driverGeo}, this.updateRegion);
+              var driverHeading = parseInt(notification.heading);
+              this.setState({driverHeading});
             }
         },
         senderID: "728367311402",
@@ -111,6 +113,7 @@ export default class Main extends Component{
     show_watingSpinner: false,
     show_driverBoard: false,
     driverInfo: null,
+    driverHeading: 0,
   };
 
   convertDirectionGeos(geos){
@@ -305,6 +308,15 @@ export default class Main extends Component{
     });
   }
 
+  updateRegion(){
+    if(this.state.status === RIDING){
+      let region = JSON.parse(JSON.stringify(this.state.region));
+      region.latitude = position.coords.latitude;
+      region.longitude = position.coords.longitude;
+      this.setState({region});
+    }
+  }
+
   render() {
     const searcher_startingPoint = this.state.show_searcher_startingPoint ? (
       <Card>
@@ -389,8 +401,9 @@ export default class Main extends Component{
     const driverMarker = this.state.driverGeo ? (
       <MapView.Marker
         coordinate={this.state.driverGeo}
-        image={require('./img/car_left.png')}
+        image={require('./img/car_up.png')}
         anchor={{x: .5, y:.5}}
+        rotation={this.state.driverHeading}
       >
       </MapView.Marker>
     ) : null;

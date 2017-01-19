@@ -35,7 +35,7 @@ export default class Main extends Component{
             if(notification.gettingDriverGeo){
               var rider_gcm_token = JSON.parse(notification.rider_gcm_token);
               this.setState({rider_gcm_token});
-              sendMyGeoInterval = setInterval(() => {this.sendMyGeo(rider_gcm_token)}, 5000);
+              // sendMyGeoInterval = setInterval(() => {this.sendMyGeo(rider_gcm_token)}, 5000);
             }
             else if(notification.stopGettingDriverGeo){
               clearInterval(sendMyGeoInterval);
@@ -64,7 +64,7 @@ export default class Main extends Component{
 
   state = {
     gcm_token: {},
-    rider_gcm_token: {},
+    rider_gcm_token: null, //不为null时会触发sendMyGeo()
     driverGeo: {
       latitude: 43,
       longitude: -91,
@@ -101,10 +101,6 @@ export default class Main extends Component{
   updateGeo(){
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        // var region = JSON.parse(JSON.stringify(this.state.region));
-        // region.latitude = position.coords.latitude;
-        // region.longitude = position.coords.longitude;
-        // this.setState({region});
 
         var driverGeo = JSON.parse(JSON.stringify(this.state.driverGeo));
         driverGeo.latitude = position.coords.latitude;
@@ -116,6 +112,17 @@ export default class Main extends Component{
           if(distance < 0.2){
             this.setState({show_btn_pickedDriverUp: true});
           }
+        }
+
+        if(this.state.status === ACCEPTED || this.state.status === RIDING){
+          var region = JSON.parse(JSON.stringify(this.state.region));
+          region.latitude = position.coords.latitude;
+          region.longitude = position.coords.longitude;
+          this.setState({region});
+        }
+
+        if(this.state.rider_gcm_token){
+          this.sendMyGeo(this.state.rider_gcm_token, driverGeo, position.coords.heading);
         }
       },
       (error) => alert(JSON.stringify(error)),
@@ -198,12 +205,13 @@ export default class Main extends Component{
     });
   }
 
-  sendMyGeo(rider_gcm_token){
+  sendMyGeo(rider_gcm_token, driverGeo, heading){
     $f.gcm({
       key: FIREBASE_API_KEY,
       token: rider_gcm_token.token,
       data: {
-        driverGeo: this.state.driverGeo,
+        driverGeo: driverGeo,
+        heading: heading
       },
       success: () => {
         console.log('Send gcm succeeded.');

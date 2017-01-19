@@ -27,7 +27,7 @@ var db = require('../db/DB.js');
 // });
 
 //all the picture getting from here
-router.get('/picture/:id',function(req,res,next){
+router.get('/picture/:id',ensureAuthenticated,function(req,res,next){
   var r = {};
   db.findPictureById(req.params.id,function(err,thing){
     if (err) {
@@ -45,16 +45,12 @@ router.get('/picture/:id',function(req,res,next){
 
 
 router.get('/showPicture/:filename', function(req, res){
-    console.log('@@@@@@@@@');
     var readstream = gfs.createReadStream({filename: req.params.filename});
       console.log(req.params.filename);
     readstream.on("error", function(err){
-      console.log('==========');
       res.send("No image found with that title");
     });
     readstream.pipe(res);
-
-
 
 });
 
