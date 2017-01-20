@@ -578,13 +578,20 @@ router.put('/ridingRequests/:email/status',ensureAuthenticated,function(req,res)
   })
 })
 
-router.get('/ridingRequests/:email', function(req, res, next){
+router.get('/testInfo',ensureAuthenticated,function(req,res,next){
+  var r = {};
+  r.success=true;
+  r.msg= "This is testing info";
+  return res.send(r);
+})
+
+router.get('/ridingRequests/:email',ensureAuthenticated, function(req, res, next){
   client.get("ridingRequest:" + req.params.email, function(err, result){
     res.send(JSON.parse(result));
   })
 })
 
-router.delete('/ridingRequests/:email', function(req, res, next){
+router.delete('/ridingRequests/:email',ensureAuthenticated,function(req, res, next){
   client.del("ridingRequest:" + req.params.email, function(err, result1){
     riderStartLocation.removeLocation(req.params.email, function(err, result){
       if(err) return res.send(err);

@@ -33,17 +33,23 @@ var passport = require('passport')
   router.use(passport.session()); //
 
 
+  //
+  // passport.serializeUser(function(user, done) {
+  //   done(null, user._id);
+  // });
+  //
+  // passport.deserializeUser(function(id, done) {
+  //   db.findDriverById(id, function(err, user) {
+  //     done(err, user);
+  //   });
+  // });
 
   passport.serializeUser(function(user, done) {
-    done(null, user._id);
+    done(null, user);
   });
 
-  passport.deserializeUser(function(id, done) {
-      console.log("&&&&&&&&&&");
-    db.findDriverById(id, function(err, user) {
-      done(err, user);
-        console.log("55555");
-    });
+  passport.deserializeUser(function(obj, done) {
+    done(null, obj);
   });
 
   passport.use(new LocalStrategy({
@@ -54,16 +60,15 @@ var passport = require('passport')
 ,
     function(req,email, password, done) {
       db.findOneDriver({ email: req.body.email }, function(err, user) {
+          console.log("================");
         if (err) { return done(err); }
         if (!user) {
-          return done(null, false, { message: 'Incorrect username.' });
+          return done(null, false, { message: 'Incorrect email.' });
         }
         if (!passwordHash.verify(req.body.password,user.password)) {
           return done(null, false, { message: 'Incorrect password.' });
         }
-        console.log("11111");
         return done(null, user);
-        console.log("222222");
       });
     }
   ));

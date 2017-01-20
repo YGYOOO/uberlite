@@ -6,7 +6,7 @@ router.get('/login', function(req, res, next){
   res.sendFile('login.html', {root:__dirname + '/../public/admin'})
 });
 
-router.use('/management/', requireAuthentication);
+//router.use('/management/', requireAuthentication);
 
 router.get('/management/driver', function(req, res, next){
   res.sendFile('driver.html', {root:__dirname + '/../public/admin'})
@@ -16,23 +16,23 @@ router.get('/management/rider', function(req, res, next){
   res.sendFile('rider.html', {root:__dirname + '/../public/admin'})
 });
 
-function requireAuthentication(req, res, next){
-  if(req.session && req.session.user){
-    db.findOneAdmin(req.session.user, function(err, result){
-      if(!err && !(result === null) && result.password === req.session.user.password){
-        next();
-      }
-      else{
-        req.session.user = {};
-        res.redirect('/login');
-      }
-    });
-  }
-  else{
-    req.session.user = {};
-    res.redirect('/login');
-  }
-}
+// function requireAuthentication(req, res, next){
+//   if(req.session && req.session.user){
+//     db.findOneAdmin(req.session.user, function(err, result){
+//       if(!err && !(result === null) && result.password === req.session.user.password){
+//         next();
+//       }
+//       else{
+//         req.session.user = {};
+//         res.redirect('/login');
+//       }
+//     });
+//   }
+//   else{
+//     req.session.user = {};
+//     res.redirect('/login');
+//   }
+// }
 
 router.get('/management/driverInfo', function(req, res, next){
   res.sendFile('driver_info.html', {root:__dirname + '/../public/admin'})

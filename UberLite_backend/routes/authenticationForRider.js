@@ -33,16 +33,24 @@ var passport = require('passport')
   router.use(passport.session()); //
 
 
+  //
+  // passport.serializeUser(function(user, done) {
+  //   done(null, user._id);
+  // });
+  //
+  // passport.deserializeUser(function(id, done) {
+  //   db.findRiderById(id, function(err, user) {
+  //     done(err, user);
+  //   });
+  // });
 
-  passport.serializeUser(function(user, done) {
-    done(null, user._id);
-  });
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
 
-  passport.deserializeUser(function(id, done) {
-    db.findRiderById(id, function(err, user) {
-      done(err, user);
-    });
-  });
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
 
   passport.use(new LocalStrategy({
     passReqToCallback: true,

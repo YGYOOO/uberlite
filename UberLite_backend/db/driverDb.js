@@ -82,6 +82,18 @@ var findDriverById = function(db, id, callback){
     }
   });
 }
+module.exports.driverFindById = function(id, callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      //call the findDrivers method
+      findDriverById(db,id,callback);
+    }
+  });
+}
+
 
 var updateDriver = function(db, id, obj, callback){
   db.collection('driver').update({_id: mongodb.ObjectId(id)}, {$set: obj}, function(err, result){
@@ -138,17 +150,7 @@ module.exports.driverCreate = function(obj,callback){
   });
 }
 
-module.exports.driverFindById = function(id, callback){
-  mongodb.connect(url,function(err,db){
-    if(err){
-      callback(err,null);
-    }
-    else {
-      //call the findDrivers method
-      findDriverById(db,id,callback);
-    }
-  });
-}
+
 //deleteDriverByEmailInTemp
 
 var deleteDriverByEmailInTemp = function(db, email, callback){

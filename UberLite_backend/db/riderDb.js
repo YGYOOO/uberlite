@@ -2,7 +2,7 @@ var mongodb = require('mongodb');
 var url = "mongodb://xuchaohui:Xu111111@ds046939.mlab.com:46939/myuberlite";
 
 //create a user
-var createDriver = function(db, objRider, callback){
+var createRider = function(db, objRider, callback){
   db.collection('rider').findOne({email: objRider.email}, function(err, thing){
     if(!thing){
       db.collection('rider').insertOne(objRider, function(err, writeResult){

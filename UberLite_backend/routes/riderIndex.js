@@ -427,7 +427,7 @@ router.get('/geo/drivers/:email',ensureAuthenticated,function(req,res,next){
   })
 })
 
-router.get('/tripPrice',function(req,res,next){
+router.get('/tripPrice',ensureAuthenticated,function(req,res,next){
   var startDay = req.query.startDay;
   var startTime=req.query.startTime;
   var totalTime = req.query.totalTime;
@@ -473,6 +473,12 @@ router.get('/tripPrice',function(req,res,next){
     });
 })
 
+router.get('/riderInfo',ensureAuthenticated,function(req,res,next){
+  var r = {};
+  r.success=true;
+  r.msg= "&&&&&&";
+  return res.send(r);
+})
 
 router.post('/ridingRecords',ensureAuthentication,function(req,res){
 
@@ -519,8 +525,9 @@ router.post('/ridingRecords',ensureAuthentication,function(req,res){
   });
 })
 
+
 //add ensureAuthentication,this is for testing
-router.delete('/ridingRequest/:email',function(req,res,next){
+router.delete('/ridingRequest/:email',ensureAuthenticated,function(req,res,next){
     var r = {};
     client.del("ridingRequest:"+req.params.email,function(err,reply){
       if (err) {
@@ -536,5 +543,17 @@ router.delete('/ridingRequest/:email',function(req,res,next){
       }
     })
 })
+
+function ensureAuthenticated(req, res, next) {
+  console.log(req.session);
+  console.log(req.isAuthenticated());
+  console.log(req.user);
+  var r = {};
+    if (req.isAuthenticated()) {
+      return next(); }
+    r.success=false;
+    r.msg="authenticate rider failed";
+    res.status(302).send(r);
+  };
 
 module.exports = router;

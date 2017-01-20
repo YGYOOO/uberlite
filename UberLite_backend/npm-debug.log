@@ -1,33 +1,33 @@
 0 info it worked if it ends with ok
 1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'start' ]
-2 info using npm@3.9.5
-3 info using node@v6.2.2
+2 info using npm@3.10.7
+3 info using node@v4.4.7
 4 verbose run-script [ 'prestart', 'start', 'poststart' ]
 5 info lifecycle MyFirst@0.0.0~prestart: MyFirst@0.0.0
 6 silly lifecycle MyFirst@0.0.0~prestart: no script for prestart, continuing
 7 info lifecycle MyFirst@0.0.0~start: MyFirst@0.0.0
 8 verbose lifecycle MyFirst@0.0.0~start: unsafe-perm in lifecycle true
-9 verbose lifecycle MyFirst@0.0.0~start: PATH: /usr/local/lib/node_modules/npm/bin/node-gyp-bin:/Users/IVAN/Documents/workspace-nodejs/myuberlite/node_modules/.bin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/git/bin:/Users/IVAN/Library/Android/sdk/tools:/Users/IVAN/Library/Android/sdk/platform-tools:/Library/apache-maven-3.3.9/bin
-10 verbose lifecycle MyFirst@0.0.0~start: CWD: /Users/IVAN/Documents/workspace-nodejs/myuberlite
+9 verbose lifecycle MyFirst@0.0.0~start: PATH: /usr/local/lib/node_modules/npm/bin/node-gyp-bin:/Users/xuchaohui/Documents/web/myuberlite/node_modules/.bin:/Users/xuchaohui/.rvm/gems/ruby-2.0.0-p648/bin:/Users/xuchaohui/.rvm/gems/ruby-2.0.0-p648@global/bin:/Users/xuchaohui/.rvm/rubies/ruby-2.0.0-p648/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/bin/npm:/usr/local/bin/npm:/Users/xuchaohui/.rvm/gems/ruby-2.0.0-p648/bin:/Users/xuchaohui/.rvm/gems/ruby-2.0.0-p648@global/bin:/Users/xuchaohui/.rvm/rubies/ruby-2.0.0-p648/bin:/Users/xuchaohui/.rvm/bin:/Users/xuchaohui/.rvm/bin
+10 verbose lifecycle MyFirst@0.0.0~start: CWD: /Users/xuchaohui/Documents/web/myuberlite
 11 silly lifecycle MyFirst@0.0.0~start: Args: [ '-c', 'node ./bin/www' ]
 12 silly lifecycle MyFirst@0.0.0~start: Returned: code: 1  signal: null
 13 info lifecycle MyFirst@0.0.0~start: Failed to exec start script
 14 verbose stack Error: MyFirst@0.0.0 start: `node ./bin/www`
 14 verbose stack Exit status 1
-14 verbose stack     at EventEmitter.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/lifecycle.js:245:16)
-14 verbose stack     at emitTwo (events.js:106:13)
-14 verbose stack     at EventEmitter.emit (events.js:191:7)
-14 verbose stack     at ChildProcess.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/spawn.js:24:14)
-14 verbose stack     at emitTwo (events.js:106:13)
-14 verbose stack     at ChildProcess.emit (events.js:191:7)
-14 verbose stack     at maybeClose (internal/child_process.js:852:16)
-14 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:215:5)
+14 verbose stack     at EventEmitter.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/lifecycle.js:255:16)
+14 verbose stack     at emitTwo (events.js:87:13)
+14 verbose stack     at EventEmitter.emit (events.js:172:7)
+14 verbose stack     at ChildProcess.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/spawn.js:40:14)
+14 verbose stack     at emitTwo (events.js:87:13)
+14 verbose stack     at ChildProcess.emit (events.js:172:7)
+14 verbose stack     at maybeClose (internal/child_process.js:827:16)
+14 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:211:5)
 15 verbose pkgid MyFirst@0.0.0
-16 verbose cwd /Users/IVAN/Documents/workspace-nodejs/myuberlite
-17 error Darwin 15.6.0
+16 verbose cwd /Users/xuchaohui/Documents/web/myuberlite
+17 error Darwin 14.5.0
 18 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "start"
-19 error node v6.2.2
-20 error npm  v3.9.5
+19 error node v4.4.7
+20 error npm  v3.10.7
 21 error code ELIFECYCLE
 22 error MyFirst@0.0.0 start: `node ./bin/www`
 22 error Exit status 1
