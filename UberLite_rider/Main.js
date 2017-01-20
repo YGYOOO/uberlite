@@ -12,9 +12,9 @@ import {domain, mapAPI} from './url.js';
 import polyline from 'polyline';
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
 const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
-const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING';
+const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING', CHECKOUT = 'CHECKOUT';
 
-let windowDimension = Dimensions.get('window');
+var windowDimension = Dimensions.get('window');
 let getRestTimeInterval, updateRegionInterval;
 
 export default class Main extends Component{
@@ -109,6 +109,7 @@ export default class Main extends Component{
     show_restTimeBoard: false,
     restTime: null,
     estimatedPrice: '',
+    startTime: 0,
     show_btn_askCar: false,
     show_watingSpinner: false,
     show_driverBoard: false,
@@ -169,7 +170,8 @@ export default class Main extends Component{
           let d = new Date();
           let days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
           let startDay = days[d.getDay()];
-          let startTime = d.getHours() + d.getSeconds()/60;
+          let startTime = d.getHours() + d.getMinutes()/60;
+          this.setState({startTime});
           let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
           $f.ajax({
             url: url,
@@ -311,8 +313,8 @@ export default class Main extends Component{
   updateRegion(){
     if(this.state.status === RIDING){
       let region = JSON.parse(JSON.stringify(this.state.region));
-      region.latitude = position.coords.latitude;
-      region.longitude = position.coords.longitude;
+      region.latitude = this.state.driverGeo.latitude;
+      region.longitude = this.state.driverGeo.longitude;
       this.setState({region});
     }
   }

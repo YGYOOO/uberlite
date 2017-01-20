@@ -13,7 +13,7 @@ var windowD = Dimensions.get('window');
 var getRidersInterval, updateRegionInterval, sendMyGeoInterval;
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
 const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
-const VIEWING = 'VIEWING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING';
+const VIEWING = 'VIEWING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING', CHECKOUT = 'CHECKOUT';
 
 export default class Main extends Component{
   constructor(){
@@ -27,19 +27,14 @@ export default class Main extends Component{
         },
         onNotification: (notification) => {
             // console.log( 'NOTIFICATION:', notification );
-            if(notification.status === ACCEPTED){
-              this.setState({status: ACCEPTED});
-              this.judgeStatus(ACCEPTED);
-              this.getDriverInfo(notification.driver_email);
-            }
             if(notification.gettingDriverGeo){
-              var rider_gcm_token = JSON.parse(notification.rider_gcm_token);
+              let rider_gcm_token = JSON.parse(notification.rider_gcm_token);
               this.setState({rider_gcm_token});
               // sendMyGeoInterval = setInterval(() => {this.sendMyGeo(rider_gcm_token)}, 5000);
             }
-            else if(notification.stopGettingDriverGeo){
-              clearInterval(sendMyGeoInterval);
-            }
+            // else if(notification.stopGettingDriverGeo){
+            //   clearInterval(sendMyGeoInterval);
+            // }
         },
         senderID: "728367311402",
         popInitialNotification: true,
@@ -81,7 +76,8 @@ export default class Main extends Component{
     riders_old:[],
     riders:[],
     status: VIEWING,
-    show_btn_pickedDriverUp: false
+    show_btn_pickedDriverUp: false,
+    show_btn_finished: false
   };
 
   convertDirectionGeos(geos){
@@ -109,9 +105,17 @@ export default class Main extends Component{
 
         if(this.state.status === ACCEPTED && this.state.startLocation && this.state.endLocation){
           let distance = $f.distance(driverGeo.latitude, driverGeo.longitude, this.state.startLocation.latitude, this.state.startLocation.longitude, 'K')
-          if(distance < 0.2){
-            this.setState({show_btn_pickedDriverUp: true});
-          }
+        }
+
+        if(this.state.status === ACCEPTED || this.state.status === RIDING){
+          var region = JSON.parse(JSON.stringify(this.state.region));
+          region.latitude = position.coords.latitude;
+          region.longitude = position.coords.longitude;
+          this.setState({region});
+        }
+
+        if(this.state.rider_gcm_token){
+          this.sendMyGeo(this.state.rider_gcm_token, driverGeo, position.coords.heading);
         }
 
         if(this.state.status === ACCEPTED || this.state.status === RIDING){
@@ -250,6 +254,7 @@ export default class Main extends Component{
                   longitude: rider.longitude
                 }});
                 this.setState({status: ACCEPTED});
+                setTimeout(() => this.setState({show_btn_pickedDriverUp: true}), 5000);
                 clearInterval(getRidersInterval);
                 var body = {
                   email: this.props.email,
@@ -317,12 +322,39 @@ export default class Main extends Component{
             onPress={() => {
               this.setState({status: RIDING});
               this.setState({show_btn_pickedDriverUp: false});
+              setTimeout(() => this.setState({show_btn_finished: true}), 5000);
               this.getDirection(this.state.startLocation, this.state.endLocation);
               $f.gcm({
                 key: FIREBASE_API_KEY,
                 token: this.state.rider_gcm_token.token,
                 data: {
                   status: RIDING,
+                },
+                success: () => {
+                  console.log('Send gcm succeeded.');
+                },
+                error: () => {
+
+                }
+              });
+            }} raised
+          />
+        </View>
+      </Animatable.View>
+    ) : null;
+
+    const btn_finished = this.state.show_btn_finished ? (
+      <Animatable.View animation="bounceInDown" duration={500}>
+        <View style={styles.btn_pickedDriverUp}>
+          <Button text="Finished trip" primary={themeColor}
+            onPress={() => {
+              this.setState({status: CHECKOUT});
+              this.setState({show_btn_pickedDriverUp: false});
+              $f.gcm({
+                key: FIREBASE_API_KEY,
+                token: this.state.rider_gcm_token.token,
+                data: {
+                  status: CHECKOUT,
                 },
                 success: () => {
                   console.log('Send gcm succeeded.');
@@ -356,6 +388,7 @@ export default class Main extends Component{
           </ScrollView>
         </View>
         {btn_pickedDriverUp}
+        {btn_finished}
       </View>
     );
   }
