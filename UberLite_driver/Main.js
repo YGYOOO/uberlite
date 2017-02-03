@@ -1,19 +1,16 @@
 import React, { Component, PropTypes } from 'react';
-import { View, Text, TextInput, StyleSheet, Dimensions, TouchableHighlight, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView, AsyncStorage, Animated } from 'react-native';
 import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-material-design';
 import MapView from 'react-native-maps';
 import * as Animatable from 'react-native-animatable';
 
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
-import {domain} from './url.js';
+import {initState, domain, mapAPI, GOOGLE_API_KEY, FIREBASE_API_KEY,
+  VIEWING, ACCEPTED, RIDING, CHECKOUT} from './global.js'
 import polyline from 'polyline';
 
 var windowD = Dimensions.get('window');
-var getRidersInterval, updateRegionInterval, sendMyGeoInterval;
-const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
-const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
-const VIEWING = 'VIEWING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING', CHECKOUT = 'CHECKOUT';
 
 export default class Main extends Component{
   constructor(){
@@ -32,6 +29,51 @@ export default class Main extends Component{
               this.setState({rider_gcm_token});
               // sendMyGeoInterval = setInterval(() => {this.sendMyGeo(rider_gcm_token)}, 5000);
             }
+            if(notification.tripFinished){
+              this.setState({show_paySuccesBoard: true}, () => {
+                Animated.sequence([ 
+                  Animated.spring(          // Uses easing functions
+                    this.state.bounceInValue,    // The value to drive
+                    {
+                      toValue: 1,
+                      friction: 7,
+                      tension: 40
+                    }            // Configuration
+                  ),
+                  Animated.delay(1500),
+                  Animated.spring(          // Uses easing functions
+                    this.state.bounceInValue,    // The value to drive
+                    {
+                      toValue: 0,
+                      friction: 7,
+                      tension: 35
+                    }            // Configuration
+                  )
+                ]).start(() => {
+                  for(var key in initState){
+                    if(key == 'gcm_token') continue;
+                    let stateObj = {};
+                    stateObj[key] = initState[key];
+                    this.setState(stateObj);
+                  }
+
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      var region = JSON.parse(JSON.stringify(this.state.region));
+                      region.latitude = position.coords.latitude;
+                      region.longitude = position.coords.longitude;
+                      this.setState({region});
+                      this.setState({driverGeo: region});
+                      this.setState({keep_getRiders: true});
+                      this.setState({keep_updateRegion: true});
+                      this.getRiders();
+                    },
+                    (error) => alert(JSON.stringify(error)),
+                    {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+                  );
+                });
+              });
+            }
             // else if(notification.stopGettingDriverGeo){
             //   clearInterval(sendMyGeoInterval);
             // }
@@ -49,36 +91,107 @@ export default class Main extends Component{
         this.setState({region});
         this.setState({driverGeo: region});
         this.getRiders();
-        getRidersInterval = setInterval(() => {this.getRiders()}, 3000);
-        updateRegionInterval = setInterval(() => {this.updateGeo()}, 5000);
+        this.setState({keep_getRiders: true});
+        this.setState({keep_updateRegion: true});
+        setInterval(() => {if(this.state.keep_getRiders) this.getRiders()}, 3000);
+        setInterval(() => {if(this.state.keep_updateRegion) this.updateGeo()}, 5000);
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
     );
+
+    this.retrieveStates();
   }
 
-  state = {
-    gcm_token: {},
-    rider_gcm_token: null, //不为null时会触发sendMyGeo()
-    driverGeo: {
-      latitude: 43,
-      longitude: -91,
-    },
-    region: {
-      latitude: 43,
-      longitude: -91,
-      latitudeDelta: 0.025,
-      longitudeDelta: 0.0121,
-    },
-    startLocation: null,
-    endLocation: null,
-    directionGeos:null,
-    riders_old:[],
-    riders:[],
-    status: VIEWING,
-    show_btn_pickedDriverUp: false,
-    show_btn_finished: false
-  };
+  componentDidMount(){
+    // setTimeout(() => {
+    //           this.setState({show_paySuccesBoard: true});
+    //           Animated.sequence([ 
+    //             Animated.spring(          // Uses easing functions
+    //               this.state.bounceInValue,    // The value to drive
+    //               {
+    //                 toValue: 1,
+    //                 friction: 7,
+    //                 tension: 40
+    //               }            // Configuration
+    //             ),
+    //             Animated.delay(1500),
+    //             Animated.spring(          // Uses easing functions
+    //               this.state.bounceInValue,    // The value to drive
+    //               {
+    //                 toValue: 0,
+    //                 friction: 7,
+    //                 tension: 35
+    //               }            // Configuration
+    //             )
+    //           ]).start(() => {
+    //             for(var key in initState){
+    //               let stateObj = {};
+    //               stateObj[key] = initState[key];
+    //               this.setState(stateObj);
+    //             }
+
+    //             navigator.geolocation.getCurrentPosition(
+    //               (position) => {
+    //                 var region = JSON.parse(JSON.stringify(this.state.region));
+    //                 region.latitude = position.coords.latitude;
+    //                 region.longitude = position.coords.longitude;
+    //                 this.setState({region});
+    //                 this.setState({driverGeo: region});
+    //                 this.setState({keep_getRiders: true});
+    //                 this.setState({keep_updateRegion: true});
+    //                 this.getRiders();
+    //               },
+    //               (error) => alert(JSON.stringify(error)),
+    //               {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+    //             );
+    //           });
+    // }, 1000)
+  }
+
+  state = initState;
+
+  storeStateDebounce = $f.debounce(this.storeState.bind(this), 1000);
+
+  componentDidUpdate(){
+    this.storeStateDebounce();
+  }
+
+  storeState(){
+    try {
+      let storeObj = {};
+      storeObj.state = this.state;
+      storeObj.date = Date.now();
+      AsyncStorage.setItem('@uberLiteDriver:state', JSON.stringify(storeObj));
+    } catch (error) {
+      // Error saving data
+    }
+  }
+
+  retrieveStates(){
+    AsyncStorage.getItem('@uberLiteDriver:state', (err, value) => {
+      if(err){
+        console.log(err);
+      }
+      else if(value){
+        let storeObj = JSON.parse(value);
+        let state = storeObj.state,
+            date = storeObj.date,
+            minPast = (Date.now() - date) / 1000 / 60;
+        if(minPast > 30){
+          AsyncStorage.removeItem('@uberLiteDriver:state');
+          return;
+        }
+        else{
+          for(var key in state){
+            let obj = {};
+            obj[key] = state[key];
+            this.setState(obj);
+          }
+        }
+      }
+    });
+  }
 
   convertDirectionGeos(geos){
     var newGeos = geos.map(function(geo){
@@ -241,6 +354,8 @@ export default class Main extends Component{
     });
   }
 
+  
+
   render() {
     let riderRequests = (() => {
       if(this.state.status !== VIEWING) return;
@@ -254,8 +369,9 @@ export default class Main extends Component{
                   longitude: rider.longitude
                 }});
                 this.setState({status: ACCEPTED});
-                setTimeout(() => this.setState({show_btn_pickedDriverUp: true}), 5000);
-                clearInterval(getRidersInterval);
+                // setTimeout(() => this.setState({show_btn_pickedDriverUp: true}), 5000);
+                this.setState({show_btn_pickedDriverUp: true});
+                this.setState({  keep_getRiders: false});
                 var body = {
                   email: this.props.email,
                   currentLatitude: this.state.driverGeo.latitude,
@@ -293,6 +409,7 @@ export default class Main extends Component{
       <MapView.Marker
         coordinate={this.state.startLocation}
         title={'Start Point'}
+        pinColor={"rgb(68, 146, 239)"}
       >
       </MapView.Marker>
     ) : null;
@@ -301,7 +418,6 @@ export default class Main extends Component{
       <MapView.Marker
         coordinate={this.state.endLocation}
         title={'End Point'}
-        pinColor={"rgb(68, 146, 239)"}
       >
       </MapView.Marker>
     ) : null;
@@ -318,11 +434,12 @@ export default class Main extends Component{
     const btn_pickedDriverUp = this.state.show_btn_pickedDriverUp ? (
       <Animatable.View animation="bounceInDown" duration={500}>
         <View style={styles.btn_pickedDriverUp}>
-          <Button text="Picked Driver Up" primary={themeColor}
+          <Button text="START TRIP" primary={themeColor}
             onPress={() => {
               this.setState({status: RIDING});
               this.setState({show_btn_pickedDriverUp: false});
-              setTimeout(() => this.setState({show_btn_finished: true}), 5000);
+              // setTimeout(() => this.setState({show_btn_finished: true}), 5000);
+              this.setState({show_btn_finished: true})
               this.getDirection(this.state.startLocation, this.state.endLocation);
               $f.gcm({
                 key: FIREBASE_API_KEY,
@@ -346,10 +463,10 @@ export default class Main extends Component{
     const btn_finished = this.state.show_btn_finished ? (
       <Animatable.View animation="bounceInDown" duration={500}>
         <View style={styles.btn_pickedDriverUp}>
-          <Button text="Finished trip" primary={themeColor}
+          <Button text="FINISH TRIP" primary={themeColor}
             onPress={() => {
               this.setState({status: CHECKOUT});
-              this.setState({show_btn_pickedDriverUp: false});
+              this.setState({show_btn_finished: false});
               $f.gcm({
                 key: FIREBASE_API_KEY,
                 token: this.state.rider_gcm_token.token,
@@ -367,6 +484,19 @@ export default class Main extends Component{
           />
         </View>
       </Animatable.View>
+    ) : null;
+
+    const paySuccesBoard = this.state.show_paySuccesBoard ? (
+      <Animated.View style={{
+        transform: [{scale: this.state.bounceInValue}],
+        position: 'absolute',
+        left: (windowD.width - 220) / 2,
+        top: (windowD.height - 110) / 2,
+      }}>
+        <Card style={styles.paySuccesBoard}>
+          <Text style={{fontSize: 15}}>{'Rider has rated and paid'}</Text>
+        </Card>
+      </Animated.View>
     ) : null;
 
     return (
@@ -389,6 +519,18 @@ export default class Main extends Component{
         </View>
         {btn_pickedDriverUp}
         {btn_finished}
+        {paySuccesBoard}
+
+        <Card style={{
+          position: 'absolute',
+          right: 0,
+          bottom:0,
+          width: 1,
+          height: 8
+        }} onPress={() => {AsyncStorage.removeItem('@uberLiteDriver:state');}}>
+          <Text></Text>
+        </Card>
+
       </View>
     );
   }
@@ -422,5 +564,11 @@ const styles = StyleSheet.create({
   },
   btn_pickedDriverUp: {
     width: windowD.width * .9
+  },
+  paySuccesBoard: {
+    width: 220,
+    height: 110,
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });

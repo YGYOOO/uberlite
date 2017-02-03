@@ -4,8 +4,8 @@ import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-mater
 import { MKTextField, MKButton, MKColor} from 'react-native-material-kit';
 
 import {themeColor, MKThemeColor} from './style/Theme.js';
-import {$f} from './modules/functions.js';
-import {domain} from './url.js';
+import {$f} from './modules/functions';
+import {domain} from './global';
 
 var window = Dimensions.get('window');
 

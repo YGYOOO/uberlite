@@ -39,6 +39,12 @@ var gfs;
 var Grid = require("gridfs-stream");
 var conn = mongoose.connection;
 
+//params validator
+var bodyParser = require('body-parser');
+var validator = require('express-validator');
+router.use(bodyParser.urlencoded({ extended: false }));
+router.use(validator());
+
 
 //declare const
 const WATING = "WATING";
@@ -129,6 +135,27 @@ router.post('/riders/:email/shot', upload.single('riderShot'), function (req, re
 
 //
 router.post('/riders/:email/registrationInfo', function(req, res) {
+
+
+  req.checkBody("email", "Enter a valid email address.").isEmail();
+  req.checkBody("password", "Enter a valid password.").notEmpty();
+  req.checkBody("full_name", "Enter a valid name.").notEmpty();
+  req.checkBody("creditCard_number", "Enter a valid creditCard number.").isCreditCard();
+  req.checkBody("creditCard_name", "Enter a valid creditCard name.").notEmpty();
+  req.checkBody("creditCard_expire", "Enter a valid creditCard expire.").isDate();
+  req.checkBody("age", "Enter a valid age.").isInt();
+  req.checkBody("sex", "Enter a valid sex.").isAlpha();
+
+  var errors = req.validationErrors();
+  if (errors) {
+    var re = {};
+    re.success = false;
+    re.error= errors;
+    return res.send(re);
+  } else {
+    // normal processing here
+
+
   db.findPictures({email: req.params.email}, function(err, p){
     var r = {};
     if(err) {
@@ -199,6 +226,9 @@ router.post('/riders/:email/registrationInfo', function(req, res) {
       }
     });
   });
+
+
+  }
 });
 
 
@@ -297,6 +327,16 @@ function ensureAuthenticated(req, res, next) {
 
 
 router.post('/ridingRequests/:email',ensureAuthenticated,function(req,res){
+
+  req.checkBody("startLocation", "Enter a valid startLocation.").notEmpty();
+  req.checkBody("endLocation", "Enter a valid endLocation.").notEmpty();
+  var errors = req.validationErrors();
+  if (errors) {
+    var re = {};
+    re.success = false;
+    re.error= errors;
+    return res.send(re);
+  } else {
   var key = req.params.email;
   var r = {};
   var ridingRequestInfo = {
@@ -355,6 +395,8 @@ router.post('/ridingRequests/:email',ensureAuthenticated,function(req,res){
       return res.send(r)
     }
   });
+
+}//valid
 });
 
 
@@ -473,15 +515,23 @@ router.get('/tripPrice',ensureAuthenticated,function(req,res,next){
     });
 })
 
-router.get('/riderInfo',ensureAuthenticated,function(req,res,next){
-  var r = {};
-  r.success=true;
-  r.msg= "&&&&&&";
-  return res.send(r);
-})
+
 
 router.post('/ridingRecords',ensureAuthentication,function(req,res){
 
+  req.checkBody("rider_email", "Enter a valid rider email.").isEmail();
+  req.checkBody("driver_emial", "Enter a valid driver emial.").isEmail();
+  req.checkBody("star_location", "Enter a valid star location.").notEmpty();
+  req.checkBody("end_location", "Enter a valid end location.").notEmpty();
+  req.checkBody("price", "Enter a valid price.").isFloat();
+  req.checkBody("rating", "Enter a valid rating.").isInt();
+  var errors = req.validationErrors();
+  if (errors) {
+    var re = {};
+    re.success = false;
+    re.error= errors;
+    return res.send(re);
+  } else {
   var r = {};
   //firstly get the start and end location from redis
   client.get("ridingRequest:"+req.params.email,function(err,reply){
@@ -523,6 +573,8 @@ router.post('/ridingRecords',ensureAuthentication,function(req,res){
       });
     }
   });
+
+}
 })
 
 
@@ -536,7 +588,7 @@ router.delete('/ridingRequest/:email',ensureAuthenticated,function(req,res,next)
         return res.send(r);
       }
       else {
-        r.success=false;
+        r.success=true;
         r.msg= "delete this ridingRequest success";
         r.data= reply;
         return res.send(r);
@@ -544,16 +596,392 @@ router.delete('/ridingRequest/:email',ensureAuthenticated,function(req,res,next)
     })
 })
 
-function ensureAuthenticated(req, res, next) {
-  console.log(req.session);
-  console.log(req.isAuthenticated());
-  console.log(req.user);
+
+
+router.post('/UnsuccessfulTripInformation',ensureAuthenticated,function(req,res,next){
   var r = {};
-    if (req.isAuthenticated()) {
-      return next(); }
-    r.success=false;
-    r.msg="authenticate rider failed";
-    res.status(302).send(r);
+  var trip = {
+    rider_email:req.body.rider_email,
+    driver_emial:req.body.driver_emial,
+    start_time:req.body.start_time,
+    end_time:req.body.end_time,
+    star_location : req.body.star_location,
+    end_location : req.body.end_location,
+    estimated_price:req.body.estimated_price,
+    price:req.body.price,
+    score:req.body.score
   };
+  db.createUnsuccessfulTrip(trip,function(err,result){
+    if (err) {
+      r.success=false;
+      r.msg = err;
+      return res.send(r);
+    }else {
+      r.success = true;
+      r.msg = "save this unsuccessful trip information";
+      r.data = result;
+      return res.send(r);
+    }
+  })
+})
+
+
+
+  router.post('/tripInformation',ensureAuthenticated,function(req, res){
+    try {
+      var callbackCheck = 0;
+      var r = {};
+      var trip = {
+        rider_email:req.body.rider_email,
+        driver_emial:req.body.driver_emial,
+        start_time:req.body.start_time,
+        end_time:req.body.end_time,
+        star_location : req.body.star_location,
+        end_location : req.body.end_location,
+        estimated_price:req.body.estimated_price,
+        price:req.body.price,
+        score:req.body.score
+      };
+      db.createTrip(trip, function(err,result){
+        callbackCheck++;
+        if (err) {
+          r.success=false;
+          r.msg = err;
+        }else {
+          r.success=true;
+          r.msg = "payement success";
+          r.data = result
+        }
+        if(callbackCheck >= 4){
+          res.send(r);
+        }
+      });
+
+      var paymentRecod = {
+        rider_email:req.body.rider_email,
+        driver_emial:req.body.driver_email,
+        price:req.body.price
+      }
+      db.paymentRecordCreate(paymentRecod, function(err,result){
+        callbackCheck++;
+        if (err) {
+          r.success=false;
+          r.msg = err;
+        }else {
+          r.success=true;
+          r.msg = "payment success";
+          r.data = result
+        }
+        if(callbackCheck >= 4){
+          res.send(r);
+        }
+      });
+
+      db.getEvaluationByEmail(req.body.driver_email, function(err,result){
+        callbackCheck++;
+        if (err) {
+          r.success=false;
+          r.msg = err;
+        }else if (result==null) {
+          var evaluation = {
+            driver_emial:req.body.driver_email,
+            score:[],
+            driver_status:"NORMAL"
+          }
+          evaluation.score.push(req.body.score);
+          db.createEvaluation(evaluation,function(err,result){
+            if (err) {
+              r.success = false;
+              r.msg = err;
+              return res.send(r);
+            }else {
+              r.success = true;
+              r.msg = "The driver is first to be evaluated"
+              return res.send(r);
+            }
+          })
+        }
+        else if(result!=null){
+          result.score.push(req.body.score);
+          if (result.driver_status=="NORMAL") {
+            db.getEvaluationParams("NORMAL",function(err,params){
+              if (err) {
+                r.success=false;
+                r.msg=err;
+                return res.send(r);
+              }else {
+                //if length > standard
+                if (result.score.length>params.normal_standard_length) {
+                  result.score.shift();
+                }
+                result.score.push(req.body.score);
+                var sum = 0;
+                for (var i = 0; i < req.body.score.length; i++) {
+                  sum+=req.body.score[i];
+                }
+                var average = sum/req.body.score.length;
+                if (average<params.standard_average) {
+                  result.score = [];
+                  result.driver_status="WARN";
+                }
+
+                db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
+                  if (err) {
+                    r.success=false;
+                    r.msg = err;
+                  }
+                  else {
+                    r.success = true;
+                  }
+                })
+              }
+            })
+          }else if (result.driver_status=="WARN") {
+            db.getEvaluationParams("WARN",function(err,params){
+              if (err) {
+                r.success=false;
+                r.msg=err;
+                return res.send(r);
+              }else {
+                //if length > standard
+                if (result.score.length>=params.warn_limit_length) {
+                  var sum = 0;
+                  var average;
+                  for (var i = 0; i < req.body.score.length; i++) {
+                    sum+=array[i];
+                  }
+                  average = sum/req.body.score.length;
+                  result.score = [];
+                  if (average>params.warn_standard_average) {
+                    result.driver_status="NORMAL";
+                  }else {
+                    result.driver_status = "PROHIBIT";
+                  }
+                }
+
+
+                if (average<params.standard_average) {
+                  result.score = [];
+                  result.driver_status="WARN";
+                }
+
+                db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
+                  if (err) {
+                    r.success=false;
+                    r.msg = err;
+                  }
+                  else {
+                    r.success = true;
+                  }
+                })
+
+              }
+            })
+          }
+        }
+        if(callbackCheck >= 4){
+          res.send(r);
+        }
+      });
+
+      client.del("ridingRequest:"+req.body.rider_email,function(err,reply){
+        callbackCheck++;
+        if (err) {
+          r.success=false;
+          r.msg= err;
+          return res.send(r);
+        }
+        else {
+          r.success=true;
+          r.msg= "delete this ridingRequest success and save trip and payment record success";
+        }
+        if(callbackCheck >= 4){
+          res.send(r);
+        }
+    })
+    } catch (e) {
+      return res.send(e);
+    }
+  //   var callbackCheck = 0;
+  //   var r = {};
+  //   var trip = {
+  //     rider_email:req.body.rider_email,
+  //     driver_emial:req.body.driver_emial,
+  //     start_time:req.body.start_time,
+  //     end_time:req.body.end_time,
+  //     star_location : req.body.star_location,
+  //     end_location : req.body.end_location,
+  //     estimated_price:req.body.estimated_price,
+  //     price:req.body.price,
+  //     score:req.body.score
+  //   };
+  //   db.createTrip(trip, function(err,result){
+  //     callbackCheck++;
+  //     if (err) {
+  //       r.success=false;
+  //       r.msg = err;
+  //     }else {
+  //       r.success=true;
+  //       r.msg = "payement success";
+  //       r.data = result
+  //     }
+  //     if(callbackCheck >= 4){
+  //       res.send(r);
+  //     }
+  //   });
+  //
+  //   var paymentRecod = {
+  //     rider_email:req.body.rider_email,
+  //     driver_emial:req.body.driver_email,
+  //     price:req.body.price
+  //   }
+  //   db.paymentRecordCreate(paymentRecod, function(err,result){
+  //     callbackCheck++;
+  //     if (err) {
+  //       r.success=false;
+  //       r.msg = err;
+  //     }else {
+  //       r.success=true;
+  //       r.msg = "payment success";
+  //       r.data = result
+  //     }
+  //     if(callbackCheck >= 4){
+  //       res.send(r);
+  //     }
+  //   });
+  //
+  //   db.getEvaluationByEmail(req.body.driver_email, function(err,result){
+  //     callbackCheck++;
+  //     if (err) {
+  //       r.success=false;
+  //       r.msg = err;
+  //     }else if (result==null) {
+  //       var evaluation = {
+  //         driver_emial:req.body.driver_email,
+  //         score:[],
+  //         driver_status:"NORMAL"
+  //       }
+  //       evaluation.score.push(req.body.score);
+  //       db.createEvaluation(evaluation,function(err,result){
+  //         if (err) {
+  //           r.success = false;
+  //           r.msg = err;
+  //           return res.send(r);
+  //         }else {
+  //           r.success = true;
+  //           r.msg = "The driver is first to be evaluated"
+  //           return res.send(r);
+  //         }
+  //       })
+  //     }
+  //     else if(result!=null){
+  //       result.score.push(req.body.score);
+  //       if (result.driver_status=="NORMAL") {
+  //         db.getEvaluationParams("NORMAL",function(err,params){
+  //           if (err) {
+  //             r.success=false;
+  //             r.msg=err;
+  //             return res.send(r);
+  //           }else {
+  //             //if length > standard
+  //             if (result.score.length>params.normal_standard_length) {
+  //               result.score.shift();
+  //             }
+  //             result.score.push(req.body.score);
+  //             var sum = 0;
+  //             for (var i = 0; i < req.body.score.length; i++) {
+  //               sum+=req.body.score[i];
+  //             }
+  //             var average = sum/req.body.score.length;
+  //             if (average<params.standard_average) {
+  //               result.score = [];
+  //               result.driver_status="WARN";
+  //             }
+  //
+  //             db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
+  //               if (err) {
+  //                 r.success=false;
+  //                 r.msg = err;
+  //               }
+  //               else {
+  //                 r.success = true;
+  //               }
+  //             })
+  //           }
+  //         })
+  //       }else if (result.driver_status=="WARN") {
+  //         db.getEvaluationParams("WARN",function(err,params){
+  //           if (err) {
+  //             r.success=false;
+  //             r.msg=err;
+  //             return res.send(r);
+  //           }else {
+  //             //if length > standard
+  //             if (result.score.length>=params.warn_limit_length) {
+  //               var sum = 0;
+  //               var average;
+  //               for (var i = 0; i < req.body.score.length; i++) {
+  //                 sum+=array[i];
+  //               }
+  //               average = sum/req.body.score.length;
+  //               result.score = [];
+  //               if (average>params.warn_standard_average) {
+  //                 result.driver_status="NORMAL";
+  //               }else {
+  //                 result.driver_status = "PROHIBIT";
+  //               }
+  //             }
+  //
+  //
+  //             if (average<params.standard_average) {
+  //               result.score = [];
+  //               result.driver_status="WARN";
+  //             }
+  //
+  //             db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
+  //               if (err) {
+  //                 r.success=false;
+  //                 r.msg = err;
+  //               }
+  //               else {
+  //                 r.success = true;
+  //               }
+  //             })
+  //
+  //           }
+  //         })
+  //       }
+  //     }
+  //     if(callbackCheck >= 4){
+  //       res.send(r);
+  //     }
+  //   });
+  //
+  //   client.del("ridingRequest:"+req.body.rider_email,function(err,reply){
+  //     callbackCheck++;
+  //     if (err) {
+  //       r.success=false;
+  //       r.msg= err;
+  //       return res.send(r);
+  //     }
+  //     else {
+  //       r.success=true;
+  //       r.msg= "delete this ridingRequest success and save trip and payment record success";
+  //     }
+  //     if(callbackCheck >= 4){
+  //       res.send(r);
+  //     }
+  // })
+
+  })
+
+  function ensureAuthenticated(req, res, next) {
+    var r = {};
+      if (req.isAuthenticated()) {
+        return next(); }
+      r.success=false;
+      r.msg="authenticate rider failed";
+      res.status(302).send(r);
+    };
 
 module.exports = router;

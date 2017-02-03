@@ -27,8 +27,8 @@ const $f =  {
         'Authorization': 'key=' + obj.key
       },
       body: {
-        "to": obj.token,
-        "data": obj.data
+        "to": obj.token || 123,
+        "data": obj.data || 123
       },
       success: (result) => {
         obj.success(result);
@@ -37,6 +37,15 @@ const $f =  {
         obj.error(err);
       }
     });
+  },
+  debounce: function(fn, delay){
+    let timeOut;
+    return function(){
+      clearTimeout(timeOut);
+      timeOut = setTimeout(() => {
+        fn(arguments);
+      }, delay);
+    }
   }
 }
 

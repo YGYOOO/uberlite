@@ -4,6 +4,8 @@ var adminDb = require('./adminDb.js');
 var riderDb = require('./riderDb.js');
 var pictureDb = require('./pictureDb.js');
 var tripDb = require('./tripDb.js');
+var paymentDb = require('./paymentDb.js');
+var evaluationDb = require('./evaluationDb.js');
 //the operation to drivers
 //to find drivers
 module.exports.findDrivers = driverDb.driversFind;
@@ -59,3 +61,13 @@ module.exports.deleteRiderInTemp = riderDb.TempRiderDeleteByEmail;
 //
 module.exports.getDayPrice = tripDb.getPriceByD;
 module.exports.getPerKMPrice = tripDb.getPriceByKM;
+module.exports.createTrip = tripDb.tripCreate;
+module.exports.paymentRecordCreate = paymentDb.paymentRecordCreate;
+module.exports.createUnsuccessfulTrip = tripDb.untripCreate;
+
+
+//
+module.exports.createEvaluation = evaluationDb.evaluationCreate;
+module.exports.getEvaluationParams = evaluationDb.getEvaluationParams;
+module.exports.updateEvaluationByEmail = evaluationDb.updateEvaluationByEmail;
+module.exports.getEvaluationByEmail = evaluationDb.getEvaluationByEmail;

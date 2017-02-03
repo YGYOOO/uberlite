@@ -50,6 +50,15 @@ const $f =  {
   	if (unit=="K") { dist = dist * 1.609344 }
   	if (unit=="N") { dist = dist * 0.8684 }
   	return dist
+  },
+  debounce: function(fn, delay){
+    let timeOut;
+    return function(){
+      clearTimeout(timeOut);
+      timeOut = setTimeout(() => {
+        fn(arguments);
+      }, delay);
+    }
   }
 }
 

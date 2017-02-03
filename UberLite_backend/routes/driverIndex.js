@@ -55,6 +55,11 @@ var multer = require("multer");
 var upload = multer({dest: "../public/uploads"});
 
 
+var validator = require('express-validator');
+var bodyParser = require('body-parser');
+router.use(bodyParser.urlencoded({ extended: false }));
+router.use(validator());
+
 var gfs;
 
 var Grid = require("gridfs-stream");
@@ -209,6 +214,24 @@ router.post('/drivers/:email/licenceShot', upload.single('driverLicenceShot'), f
 
 //
 router.post('/drivers/:email/registrationInfo', function(req, res) {
+
+  req.checkBody("email", "Enter a valid email address.").isEmail();
+  req.checkBody("password", "Enter a valid password.").notEmpty();
+  req.checkBody("full_name", "Enter a valid name.").notEmpty();
+  req.checkBody("licence_number", "Enter a valid creditCard number.").isAlphanumeric();
+  req.checkBody("creditCard_name", "Enter a valid creditCard name.").notEmpty();
+  req.checkBody("age", "Enter a valid age.").isInt();
+  req.checkBody("sex", "Enter a valid sex.").isAlpha();
+
+  var errors = req.validationErrors();
+  if (errors) {
+    var re = {};
+    re.success = false;
+    re.error= errors;
+    return res.send(re);
+  } else {
+    // normal processing here
+
   var email = req.params.email;
   //get picture
   var driverP = {};
@@ -300,6 +323,8 @@ router.post('/drivers/:email/registrationInfo', function(req, res) {
       });
     }
   });
+
+}//valid
 });
 
 router.post('/driverRegisterResend',function(req,res){
@@ -434,7 +459,20 @@ router.get('/geo/riders',ensureAuthenticated,function(req,res){
       });
 });
 
+
 router.put('/ridingRequests/:email',ensureAuthenticated,function(req,res){
+
+  req.checkParams("email", "Enter a valid email address.").notEmpty();
+  // req.checkBody("currentLatitude", "Enter a valid current Latitude.").notEmpty();
+  // req.checkBody("currentLongitude", "Enter a valid current Longitude.").notEmpty();
+  var errors = req.validationErrors();
+  if (errors) {
+    var re = {};
+    re.success = false;
+    re.error= errors;
+    return res.send(re);
+  } else {
+    // normal processing here
   var driver_email=req.body.email
   var currentLatitude=req.body.currentLatitude;
   var currentLongitude=req.body.currentLongitude;
@@ -508,9 +546,22 @@ router.put('/ridingRequests/:email',ensureAuthenticated,function(req,res){
     }
   }
 });
+
+}//valid
 });
 
+
+
 router.put('/ridingRequests/:email/status',ensureAuthenticated,function(req,res){
+  req.checkBody("status", "Enter a valid status.").isAlpha();
+  var errors = req.validationErrors();
+  if (errors) {
+    var re = {};
+    re.success = false;
+    re.error= errors;
+    return res.send(re);
+  } else {
+    // normal processing here
   var r = {};
   var status = req.body.status;
   var current_driver_email=req.user.email;
@@ -576,6 +627,7 @@ router.put('/ridingRequests/:email/status',ensureAuthenticated,function(req,res)
     }
   }
   })
+}//valid
 })
 
 router.get('/testInfo',ensureAuthenticated,function(req,res,next){
@@ -600,5 +652,7 @@ router.delete('/ridingRequests/:email',ensureAuthenticated,function(req, res, ne
     });
   })
 })
+
+router.po
 
 module.exports = router;

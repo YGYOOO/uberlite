@@ -1,21 +1,33 @@
 import React, { Component, PropTypes } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated, AsyncStorage } from 'react-native';
 import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-material-design';
 import MapView from 'react-native-maps';
 import PlacesAutocomplete from './components/PlacesAutocomplete';
 import * as Animatable from 'react-native-animatable';
 import Spinner from 'react-native-spinkit';
+import StarRating from 'react-native-star-rating';
 
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
-import {domain, mapAPI} from './url.js';
+import {initState, domain, mapAPI, GOOGLE_API_KEY, FIREBASE_API_KEY, 
+  VIEWING, WATING, ACCEPTED, RIDING, CHECKOUT} from './global.js'
 import polyline from 'polyline';
-const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
-const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
-const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING', CHECKOUT = 'CHECKOUT';
 
-var windowDimension = Dimensions.get('window');
-let getRestTimeInterval, updateRegionInterval;
+
+let windowD = Dimensions.get('window');
+let trip_info = {
+    rider_email: null,
+    driver_emial: null,
+    star_location: null,
+    end_location: null,
+    estimated_price: null,
+    price: null,
+    score: null,
+    post_time: null,
+    accepted_time: null,
+    pickup_time: null,
+    arrival_time: null
+  }
 
 export default class Main extends Component{
   constructor(){
@@ -32,19 +44,31 @@ export default class Main extends Component{
             // console.log( 'NOTIFICATION:', notification );
             switch(notification.status){
               case ACCEPTED:
+                trip_info.accepted_time = Date.now();
                 this.setState({status: ACCEPTED});
                 this.judgeStatus(ACCEPTED);
                 this.getDriverInfo(notification.driver_email);
-                var driver_gcm_token = JSON.parse(notification.driver_gcm_token);
-                this.setState(driver_gcm_token);
+                trip_info.driver_emial = notification.driver_email;
+                let driver_gcm_token = JSON.parse(notification.driver_gcm_token);
+                this.setState({driver_gcm_token});
                 this.startGettingDriverGeo(driver_gcm_token);
                 break;
               case RIDING:
+                trip_info.pickup_time = Date.now();
                 this.setState({status: RIDING});
                 this.setState({show_driverBoard: false});
                 this.setState({show_restTimeBoard: true});
+                let d = new Date();
+                this.setState({startTime: d.getHours() + d.getMinutes()/60});
                 this.getRestTime();
-                getRestTimeInterval = setInterval(this.getRestTime.bind(this), 10000);
+                this.setState({keep_getRestTime: true});
+                break;
+              case CHECKOUT:
+                trip_info.arrival_time = Date.now();
+                this.countPrice(() => {
+                  this.setState({show_checkoutBoard: true});
+                  this.setState({show_restTimeBoard: false});
+                });
                 break;
             }
             if(notification.driverGeo){
@@ -59,63 +83,108 @@ export default class Main extends Component{
         requestPermissions: true,
     });
 
+    this.getCurrentPosition();
+
+    // setTimeout(() => {
+    //   // console.log(this.state.status);
+    //   // this.setState({status: RIDING});
+    //   this.props.navigator.pop();
+    //   // this.props.navigator.push({title: 'Main'});
+    // }, 2000);
+    this.retrieveStates();
+    setInterval(this.getRestTime.bind(this), 10000);
+  }
+
+  state = initState;
+
+  storeStateDebounce = $f.debounce(this.storeState.bind(this), 1000);
+
+  componentDidMount() {
+    // this.setState({show_thanksBoard: true});
+    // this.setState({show_checkoutBoard: false});
+
+    // Animated.sequence([ 
+    //   Animated.spring(          // Uses easing functions
+    //     this.state.bounceInValue,    // The value to drive
+    //     {
+    //       toValue: 1,
+    //       friction: 7,
+    //       tension: 40
+    //     }            // Configuration
+    //   ),
+    //   Animated.delay(1000),
+    //   Animated.spring(          // Uses easing functions
+    //     this.state.bounceInValue,    // The value to drive
+    //     {
+    //       toValue: 0,
+    //       friction: 7,
+    //       tension: 35
+    //     }            // Configuration
+    //   )
+    // ]).start(() => {
+    //   for(var key in initState){
+    //     let stateObj = {};
+    //     stateObj[key] = initState[key];
+    //     this.setState(stateObj);
+    //   }
+    // });
+  }
+
+  componentDidUpdate(){
+    this.storeStateDebounce();
+  }
+  
+
+  storeState(){
+    try {
+      let storeObj = {};
+      storeObj.state = this.state;
+      storeObj.date = Date.now();
+      AsyncStorage.setItem('@uberLiteRider:state', JSON.stringify(storeObj));
+    } catch (error) {
+      // Error saving data
+    }
+  }
+
+  retrieveStates(){
+    AsyncStorage.getItem('@uberLiteRider:state', (err, value) => {
+      if(err){
+        console.log(err);
+      }
+      else if(value){
+        let storeObj = JSON.parse(value);
+        let state = storeObj.state,
+            date = storeObj.date,
+            minPast = (Date.now() - date) / 1000 / 60;
+
+        if(minPast > 30){
+          AsyncStorage.removeItem('@uberLiteRider:state');
+          return;
+        }
+        else{
+          for(var key in state){
+            let obj = {};
+            obj[key] = state[key];
+            this.setState(obj);
+          }
+        }
+      }
+    });
+  }
+
+  getCurrentPosition(){
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        var region = this.state.region;
+        var region = JSON.parse(JSON.stringify(this.state.region));
         region.latitude = position.coords.latitude;
         region.longitude = position.coords.longitude;
         this.setState({region});
         this.setState({startLocation: region});
-        this.setState({driverCoor: region});
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
     );
   }
-
-  state = {
-    status: VIEWING,
-    gcm_token: '',
-    driver_gcm_token: '',
-    riderGeo: {
-      latitude: 43,
-      longitude: -91
-    },
-    driverGeo: null,
-    region: {
-      latitude: 43,
-      longitude: -91,
-      latitudeDelta: 0.025,
-      longitudeDelta: 0.0121
-    },
-    startLocation: {
-      latitude: 43,
-      longitude: -91
-    },
-    endLocation: null,
-    directionGeo: [{
-      latitude: 43.8178,
-      longitude: -91.2292
-      },
-      {
-        latitude: 43.814,
-        longitude: -91.2292
-      }
-    ],
-    startLocationName:'',
-    show_searcher_startingPoint: true,
-    show_searcher_destination: false,
-    show_priceEstimationBoard: false,
-    show_restTimeBoard: false,
-    restTime: null,
-    estimatedPrice: '',
-    startTime: 0,
-    show_btn_askCar: false,
-    show_watingSpinner: false,
-    show_driverBoard: false,
-    driverInfo: null,
-    driverHeading: 0,
-  };
 
   convertDirectionGeos(geos){
     var newGeos = geos.map(function(geo){
@@ -156,7 +225,7 @@ export default class Main extends Component{
     });
   }
 
-  getTotalPrice(){
+  estimateTotalPrice(){
     let origins = this.state.startLocation.latitude + ',' + this.state.startLocation.longitude;
     let destinations = this.state.endLocation.latitude + ',' + this.state.endLocation.longitude;
     let url = mapAPI + '/distancematrix/json?origins=' + origins + '&destinations=' + destinations + '&mode= driving&key=' + GOOGLE_API_KEY
@@ -165,13 +234,13 @@ export default class Main extends Component{
       method: 'GET',
       success: (result) => {
         if(result.status === 'OK'){
-          let totalMile = result.rows[0].elements[0].distance.text.split(' ')[0];
-          let totalTime = result.rows[0].elements[0].duration.text.split(' ')[0];
+          let totalMile = result.rows[0].elements[0].distance.text.split(' ')[0],
+              totalTime = result.rows[0].elements[0].duration.text.split(' ')[0];
           let d = new Date();
           let days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
           let startDay = days[d.getDay()];
-          let startTime = d.getHours() + d.getMinutes()/60;
-          this.setState({startTime});
+          let startTime = d.getHours() + (d.getMinutes() + 1)/60;
+          this.setState({totalMile});
           let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
           $f.ajax({
             url: url,
@@ -179,15 +248,16 @@ export default class Main extends Component{
             success: (result) => {
               if(result.success){
                 let estimatedPrice = result.data.totalPrice;
+                trip_info.estimated_price = estimatedPrice;
                 this.setState({estimatedPrice});
               }
               else{
                 alert('Sending request failed, please check your network');
-                console.err(result.msg);
+                console.log(result.msg);
               }
             },
             error: (err) => {
-              console.err(err);
+              console.log(err);
               alert('Sending request failed, please check your network');
               this.navLogin();
             }
@@ -198,7 +268,7 @@ export default class Main extends Component{
         }
       },
       error: (err) => {
-        console.err(err);
+        console.log(err);
         alert('Sending request failed, please check your network');
         this.navLogin();
       }
@@ -206,7 +276,16 @@ export default class Main extends Component{
   }
 
   postRidingRequest(){
+    trip_info.rider_email = this.props.email;
+    trip_info.star_location = {
+      latitude: this.state.startLocation.latitude,
+      longitude: this.state.startLocation.longitude
+    };
+    trip_info.end_location= this.state.endLocation;
+    trip_info.post_time = Date.now();
+
     this.setState({show_watingSpinner: true});
+    this.setState({show_markerTitle : false});
     this.setState({show_searcher_startingPoint: false});
     this.setState({show_searcher_destination: false});
     this.setState({show_btn_askCar: false});
@@ -268,7 +347,7 @@ export default class Main extends Component{
   }
 
   startGettingDriverGeo(driver_gcm_token){
-    console.log(driver_gcm_token);
+    this.setState({show_driverMarker: true});
     $f.gcm({
       key: FIREBASE_API_KEY,
       token: driver_gcm_token.token,
@@ -286,28 +365,30 @@ export default class Main extends Component{
   }
 
   getRestTime(){
-    let origins = this.state.driverGeo.latitude + ',' + this.state.driverGeo.longitude;
-    let destinations = this.state.endLocation.latitude + ',' + this.state.endLocation.longitude;
-    let url = mapAPI + '/distancematrix/json?origins=' + origins + '&destinations=' + destinations + '&mode= driving&key=' + GOOGLE_API_KEY
-    $f.ajax({
-      url: url,
-      method: 'GET',
-      success: (result) => {
-        if(result.status === 'OK'){
-          // let totalMile = result.rows[0].elements[0].distance.text.split(' ')[0];
-          let restTime = result.rows[0].elements[0].duration.text.split(' ')[0];
-          this.setState({restTime})
-        }
-        else{
+    if(this.state.keep_getRestTime){
+      let origins = this.state.driverGeo.latitude + ',' + this.state.driverGeo.longitude;
+      let destinations = this.state.endLocation.latitude + ',' + this.state.endLocation.longitude;
+      let url = mapAPI + '/distancematrix/json?origins=' + origins + '&destinations=' + destinations + '&mode= driving&key=' + GOOGLE_API_KEY
+      $f.ajax({
+        url: url,
+        method: 'GET',
+        success: (result) => {
+          if(result.status === 'OK'){
+            // let totalMile = result.rows[0].elements[0].distance.text.split(' ')[0];
+            let restTime = result.rows[0].elements[0].duration.text.split(' ')[0];
+            this.setState({restTime})
+          }
+          else{
+            alert('Sending request failed, please check your network');
+          }
+        },
+        error: (err) => {
+          console.err(err);
           alert('Sending request failed, please check your network');
+          this.navLogin();
         }
-      },
-      error: (err) => {
-        console.err(err);
-        alert('Sending request failed, please check your network');
-        this.navLogin();
-      }
-    });
+      });
+    }
   }
 
   updateRegion(){
@@ -319,15 +400,102 @@ export default class Main extends Component{
     }
   }
 
+  onStarRatingPress(rating) {
+    trip_info.score = rating;
+    this.setState({
+      starCount: rating
+    });
+  }
+
+  countPrice(callback){
+    let d = new Date(),
+        days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+        startDay = days[d.getDay()],
+        startTime = this.state.startTime,
+        totalTime = (d.getHours() + d.getMinutes()/60 - startTime) * 60,
+        totalMile = this.state.totalMile;
+    let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
+    $f.ajax({
+      url: url,
+      method: 'GET',
+      success: (result) => {
+        if(result.success){
+          let price = result.data.totalPrice;
+          trip_info.price = price;
+          this.setState({price});
+          callback();
+        }
+        else{
+          alert('Sending request failed, please check your network');
+          console.err(result.msg);
+        }
+      },
+      error: (err) => {
+        console.err(err);
+        alert('Sending request failed, please check your network');
+        this.navLogin();
+      }
+    });
+  }
+
+  onConfirmCheckout(){
+    console.log(this.state.driver_gcm_token.token);
+    $f.gcm({
+      key: FIREBASE_API_KEY,
+      token: this.state.driver_gcm_token.token,
+      data: {
+        tripFinished: true
+      },
+      success: () => {
+        console.log('Send gcm succeeded.');
+        // this.setState({show_checkoutBoard: false});
+      },
+      error: () => {
+
+      }
+    });
+
+    this.setState({show_thanksBoard: true});
+    this.setState({show_checkoutBoard: false});
+
+    Animated.sequence([ 
+      Animated.spring(          // Uses easing functions
+        this.state.bounceInValue,    // The value to drive
+        {
+          toValue: 1,
+          friction: 7,
+          tension: 40
+        }            // Configuration
+      ),
+      Animated.delay(1000),
+      Animated.spring(          // Uses easing functions
+        this.state.bounceInValue,    // The value to drive
+        {
+          toValue: 0,
+          friction: 7,
+          tension: 35
+        }            // Configuration
+      )
+    ]).start(() => {
+      for(var key in initState){
+        if(key == 'gcm_token') continue;
+        let stateObj = {};
+        stateObj[key] = initState[key];
+        this.setState(stateObj);
+      }
+      this.getCurrentPosition();
+      setTimeout(() => console.log(this.state), 1500);
+    });
+  }
+
   render() {
     const searcher_startingPoint = this.state.show_searcher_startingPoint ? (
       <Card>
         <PlacesAutocomplete
-          width={windowDimension.width}
+          width={windowD.width}
           height={30}
           placeholder={'Enter Starting Point'}
           callback={(result) => {
-            console.log(1);
             var startLocation = JSON.parse(JSON.stringify(this.state.startLocation));
             startLocation.latitude = result.results[0].geometry.location.lat;
             startLocation.longitude = result.results[0].geometry.location.lng;
@@ -344,7 +512,7 @@ export default class Main extends Component{
       <Animatable.View animation="fadeInDown" duration={350}>
         <Card style={styles.endPointSearcher}>
           <PlacesAutocomplete
-            width={windowDimension.width}
+            width={windowD.width}
             height={30}
             placeholder={'Enter Destination'}
             callback={(result) => {
@@ -352,7 +520,7 @@ export default class Main extends Component{
                 latitude: result.results[0].geometry.location.lat,
                 longitude: result.results[0].geometry.location.lng
               }});
-              this.getTotalPrice();
+              this.estimateTotalPrice();
               this.setState({show_btn_askCar: true});
               this.setState({show_priceEstimationBoard: true});
             }}
@@ -379,7 +547,7 @@ export default class Main extends Component{
       <View style={styles.shade}>
         <Spinner style={styles.spinner} isVisible={true} size={60} type={'Pulse'} color={'white'}/>
         <View style={styles.watingTextView}>
-          <Text style={styles.watingText}>{'Please wating for a rider...'}</Text>
+          <Text style={styles.watingText}>{'Please wating for a driver...'}</Text>
         </View>
       </View>
     ) : null;
@@ -400,7 +568,7 @@ export default class Main extends Component{
       </Animatable.View>
     ) : null;
 
-    const driverMarker = this.state.driverGeo ? (
+    const driverMarker = this.state.show_driverMarker && this.state.driverGeo ? (
       <MapView.Marker
         coordinate={this.state.driverGeo}
         image={require('./img/car_up.png')}
@@ -413,9 +581,40 @@ export default class Main extends Component{
     const endPointMarker = this.state.endLocation ? (
       <MapView.Marker
         coordinate={this.state.endLocation}
-        pinColor={"rgb(68, 146, 239)"}
       >
       </MapView.Marker>
+    ) : null;
+
+    const checkoutBoard = this.state.show_checkoutBoard ? (
+      <View style={styles.shade}>
+        <Animatable.View animation="bounceIn" duration={700}>
+          <Card style={styles.checkoutBoard}>
+            <Text style={styles.checkoutBoardTitle}>{'Rate for driver'}</Text>
+            <View style={{width: 130, margin: 10}}>
+              <StarRating 
+                disabled={false}
+                maxStars={5}
+                starSize={20}
+                starColor={'#FFCC00'}
+                rating={this.state.starCount}
+                selectedStar={(rating) => this.onStarRatingPress(rating)}
+              />
+            </View>
+            <Text style={{textAlign: 'center'}}>{'Pay for trip: $' + this.state.price}</Text>
+            <View style={{marginTop: 5}}>
+              <Button text="PAY" primary={themeColor} onPress={this.onConfirmCheckout.bind(this)} raised theme={'dark'}/>
+            </View>
+          </Card>
+        </Animatable.View>
+      </View>
+    ) : null;
+
+    const thanksBoard = this.state.show_thanksBoard ? (
+      <Animated.View style={{transform: [{scale: this.state.bounceInValue}]}}>
+        <Card style={styles.thanksBoard}>
+          <Text style={{fontSize: 20}}>{'Thanks!'}</Text>
+        </Card>
+      </Animated.View>
     ) : null;
 
     return (
@@ -425,10 +624,13 @@ export default class Main extends Component{
           region={this.state.region}
           showsUserLocation={true}
           onRegionChange={this.onRegionChange.bind(this)}
+          onPress={() => this.marker.showCallout()}
         >
           <MapView.Marker
             coordinate={this.state.startLocation}
+            pinColor={"rgb(68, 146, 239)"}
             title={'Get on at here'}
+            ref={ref => { this.marker = ref; if(this.marker && this.state.show_markerTitle) this.marker.showCallout();}}
           >
             <MapView.Callout onPress={this.fillStartLocation.bind(this)}>
             </MapView.Callout>
@@ -456,6 +658,19 @@ export default class Main extends Component{
           {restTimeBoard}
         </View>
         {watingSpinner}
+        {checkoutBoard}
+        {thanksBoard}
+
+        <Card style={{
+          position: 'absolute',
+          right: 0,
+          bottom:0,
+          width: 1,
+          height: 8
+        }} onPress={() => {AsyncStorage.removeItem('@uberLiteRider:state');}}>
+          <Text></Text>
+        </Card>
+
       </View>
     );
   }
@@ -468,7 +683,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center'
   },
   map: {
@@ -492,7 +707,7 @@ const styles = StyleSheet.create({
   confirm: {
     position: 'absolute',
     bottom: 10,
-    width: windowDimension.width
+    width: windowD.width
   },
   priceEstimationBoard: {
     paddingTop: 10,
@@ -505,14 +720,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'black',
-    opacity: .5,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
+    alignItems: 'center'
+  },
+  checkoutBoard: {
+    width: windowD.width * .8,
+    padding: 18,
+    alignItems: 'center'
+  },
+  checkoutBoardTitle: {
+    textAlign: 'center', 
     alignItems: 'center'
   },
   watingTextView: {
     position: 'absolute',
-    top: windowDimension.height/2 + 15,
+    top: windowD.height/2 + 15,
     left: 0,
     right: 0,
     alignItems: 'center'
@@ -525,12 +748,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 41,
     alignItems: 'center',
-    width: windowDimension.width
+    width: windowD.width
   },
   infoBoard: {
     alignItems: 'center',
     padding: 10,
     paddingTop: 20,
-    width: windowDimension.width * .9
+    width: windowD.width * .9
+  },
+  thanksBoard: {
+    width: 200,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
