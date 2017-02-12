@@ -14,6 +14,7 @@ var driverSchema = mongoose.Schema({
   authorized:Boolean,
   driver_picture:String,
   car_picture:String,
+  car_type:String,
   licence_picture:String
 });
 

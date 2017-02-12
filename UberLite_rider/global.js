@@ -5,6 +5,7 @@ const mapAPI =  "https://maps.googleapis.com/maps/api";
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
 const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
 const VIEWING = 'VIEWING', WATING = 'WATING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING', CHECKOUT = 'CHECKOUT';
+const NORMAL = 'normal',  LARGE = 'large', SUV = 'suv';
 const initState = {
   status: VIEWING,
   gcm_token: '',
@@ -38,7 +39,6 @@ const initState = {
   show_markerTitle: true,
   show_searcher_startingPoint: true,
   show_searcher_destination: false,
-  show_priceEstimationBoard: false,
   show_restTimeBoard: false,
   restTime: null,
   estimatedPrice: '',
@@ -55,8 +55,9 @@ const initState = {
   driverHeading: 0,
   starCount: 4,
   bounceInValue: new Animated.Value(0),
-  keep_getRestTime: false
+  keep_getRestTime: false,
+  carType: NORMAL
 };
 
 export {initState, domain, mapAPI, GOOGLE_API_KEY, FIREBASE_API_KEY,
-  VIEWING, WATING, ACCEPTED, RIDING, CHECKOUT};
+  VIEWING, WATING, ACCEPTED, RIDING, CHECKOUT, NORMAL, LARGE, SUV};

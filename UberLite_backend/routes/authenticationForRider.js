@@ -52,7 +52,7 @@ passport.deserializeUser(function(obj, done) {
   done(null, obj);
 });
 
-  passport.use(new LocalStrategy({
+  passport.use('rider-local',new LocalStrategy({
     passReqToCallback: true,
     usernameField: 'email',
     passwordField: 'password'
@@ -75,7 +75,7 @@ passport.deserializeUser(function(obj, done) {
 
 
 router.post('/riderLogin', function(req, res, next) {
-passport.authenticate('local', function(err, user, info) {
+passport.authenticate('rider-local', function(err, user, info) {
   var r = {};
   if (err) {
     r.success=false;
@@ -102,7 +102,7 @@ passport.authenticate('local', function(err, user, info) {
 });
 
 router.get('/riderLogin', function(req, res, next) {
-passport.authenticate('local', function(err, user, info) {
+passport.authenticate('rider-local', function(err, user, info) {
   var r = {};
   if (err) {
     r.success=false;

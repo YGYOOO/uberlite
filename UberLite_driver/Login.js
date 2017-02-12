@@ -1,5 +1,5 @@
 import React, { Component, PropTypes } from 'react';
-import { View, Text, TextInput, StyleSheet, Dimensions, TouchableHighlight } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, TouchableHighlight, AsyncStorage } from 'react-native';
 import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-material-design';
 import { MKTextField, MKButton, MKColor} from 'react-native-material-kit';
 
@@ -36,7 +36,7 @@ export default class Login extends Component{
       success: (result) => {
         if(result.success){
           this.navMain();
-          this.props.updateEmail(this.state.email);
+          this.props.updateProfile(result.data);
           this.setState({processingLogin: false});
         }
         else alert("Loing failed. Pleace check your email or password")
@@ -58,6 +58,17 @@ export default class Login extends Component{
         <View style={styles.loginBtn}>
           <Button text="SIGN UP" primary={themeColor} onPress={this.navRegistration.bind(this)} raised theme={'dark'}/>
         </View>
+        <Card style={{
+          position: 'absolute',
+          right: 0,
+          bottom:0,
+          width: 1,
+          height: 8
+        }} onPress={() => {
+            AsyncStorage.removeItem('@uberLiteDriver:state');
+          }}>
+          <Text></Text>
+        </Card>
       </View>
     )
   }

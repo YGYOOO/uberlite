@@ -11,7 +11,9 @@ function login(){
     method: "POST",
     data: data
   }).done(function(result){
-    pageRedirect('/management/driver');
+    console.log(result);
+    if(result.success)
+      pageRedirect('/management/driver');
   }).fail(function(result){
     pageRedirect('/login');
   })
@@ -19,7 +21,7 @@ function login(){
 
 function getDriverInfo($ele, id){
   $.ajax({
-    url: "/adminAPI/driver/" + id,
+    url: "/driver/" + id,
     method: "GET",
   }).done(function(result){
     fillDriverInfo(result.data, $ele);
@@ -41,7 +43,7 @@ function fillDriverInfo(driver, $ele){
 
 function getAllDrivers($ele, callback){
   $.ajax({
-    url: "/adminAPI/drivers",
+    url: "/drivers",
     method: "GET",
   }).done(function(result){
     listAllDrivers(result.data, $ele);
@@ -53,7 +55,7 @@ function getAllDrivers($ele, callback){
 
 function searchDrivers($ele, name, callback){
   $.ajax({
-    url: "/adminAPI/drivers?full_name=" + name,
+    url: "/drivers?full_name=" + name,
     method: "GET",
   }).done(function(result){
     listAllDrivers(result.data, $ele);
@@ -90,7 +92,7 @@ function listAllDrivers(drivers, $ele){
 
 function getRiderInfo($ele, id){
   $.ajax({
-    url: "/adminAPI/rider/" + id,
+    url: "/rider/" + id,
     method: "GET",
   }).done(function(result){
     fillRiderInfo(result.data, $ele);
@@ -109,7 +111,7 @@ function fillRiderInfo(rider, $ele){
 
 function getAllRiders($ele, callback){
   $.ajax({
-    url: "/adminAPI/riders",
+    url: "/riders",
     method: "GET",
   }).done(function(result){
     listAllRiders(result.data, $ele);
@@ -130,7 +132,7 @@ function listAllRiders(riders, $ele){
     $ele.append(
       '<tr><td>'+ e.full_name + '</td>' +
       '<td>'+ e.email + '</td>' +
-      '<td>'+ e.password + '</td>' +
+      '<td>********</td>' +
       '<td class="active">'+ htmlActive +'</td><td><i class="info fa fa-info-circle fa-lg" aria-hidden="true"></i></td></tr>'
     );
   });
@@ -139,7 +141,7 @@ function listAllRiders(riders, $ele){
 function approveRegistration(id){
   var data = {authorized: true, active: true};
   $.ajax({
-    url: "/adminAPI/driver/" + id,
+    url: "/driver/" + id,
     method: "PUT",
     data: JSON.stringify(data),
     contentType: "application/json; charset=utf-8"
@@ -155,7 +157,7 @@ function approveRegistration(id){
 function active($ele, id, active){
   var data = {active: active};
   $.ajax({
-    url: "/adminAPI/driver/" + id,
+    url: "/driver/" + id,
     method: "PUT",
     data: JSON.stringify(data),
     contentType: "application/json; charset=utf-8"

@@ -12,6 +12,8 @@ import polyline from 'polyline';
 
 var windowD = Dimensions.get('window');
 
+let keep_storeState = true;
+
 export default class Main extends Component{
   constructor(){
     super();
@@ -158,13 +160,15 @@ export default class Main extends Component{
   }
 
   storeState(){
-    try {
-      let storeObj = {};
-      storeObj.state = this.state;
-      storeObj.date = Date.now();
-      AsyncStorage.setItem('@uberLiteDriver:state', JSON.stringify(storeObj));
-    } catch (error) {
-      // Error saving data
+    if(keep_storeState){
+      try {
+        let storeObj = {};
+        storeObj.state = this.state;
+        storeObj.date = Date.now();
+        AsyncStorage.setItem('@uberLiteDriver:state', JSON.stringify(storeObj));
+      } catch (error) {
+        // Error saving data
+      }
     }
   }
 
@@ -183,10 +187,16 @@ export default class Main extends Component{
           return;
         }
         else{
+          let asyncCount = Object.keys(state).length;
           for(var key in state){
+            if(key === 'region') continue;
             let obj = {};
             obj[key] = state[key];
-            this.setState(obj);
+            this.setState(obj, () => {
+              asyncCount--;
+              if(asyncCount <= 0){
+              }
+            });
           }
         }
       }
@@ -249,7 +259,9 @@ export default class Main extends Component{
 
   getRiders(){
     $f.ajax({
-      url: domain + '/geo/riders/?radius=5000&latitude=' + this.state.region.latitude + '&longitude=' + this.state.region.longitude,
+      url: domain + '/geo/riders/?radius=5000&latitude=' + this.state.region.latitude + 
+      '&longitude=' + this.state.region.longitude +
+      '&car_type=' + this.props.profile.car_type,
       method: 'GET',
       success: function(result){
         let riders = this.state.riders.slice().filter(function(r1){
@@ -263,12 +275,13 @@ export default class Main extends Component{
         let newRiders = result.data.filter(function(r1){
           let finded = false;
           riders.forEach(function(r2){
+            // alert(r1.key + ' ' + r2.key)
             if(r1.key == r2.key) finded = true;
           });
+          // alert(finded);
           return !finded;
         });
-
-        if(newRiders){
+        if(newRiders.length > 0){
           riders = riders.concat(newRiders);
           this.setState({riders});
           newRiders.forEach(function(r){
@@ -354,8 +367,6 @@ export default class Main extends Component{
     });
   }
 
-  
-
   render() {
     let riderRequests = (() => {
       if(this.state.status !== VIEWING) return;
@@ -373,10 +384,11 @@ export default class Main extends Component{
                 this.setState({show_btn_pickedDriverUp: true});
                 this.setState({  keep_getRiders: false});
                 var body = {
-                  email: this.props.email,
+                  email: this.props.profile.email,
                   currentLatitude: this.state.driverGeo.latitude,
                   currentLongitude : this.state.driverGeo.longitude,
-                  driver_gcm_token: this.state.gcm_token
+                  driver_gcm_token: this.state.gcm_token,
+                  car_type: this.props.profile.car_type
                 };
                 $f.ajax({
                   url: domain + '/ridingRequests/' + rider.key,
@@ -520,17 +532,6 @@ export default class Main extends Component{
         {btn_pickedDriverUp}
         {btn_finished}
         {paySuccesBoard}
-
-        <Card style={{
-          position: 'absolute',
-          right: 0,
-          bottom:0,
-          width: 1,
-          height: 8
-        }} onPress={() => {AsyncStorage.removeItem('@uberLiteDriver:state');}}>
-          <Text></Text>
-        </Card>
-
       </View>
     );
   }

@@ -30,20 +30,20 @@ export default class UberLite_driver extends Component {
     this.setState({title: title});
   }
 
-  updateEmail(email){
-    this.setState({email});
+  updateProfile(profile){
+    this.setState({profile});
   }
 
   navigatorRenderScene(route, navigator) {
     switch(route.title) {
       case 'Login':
-        return (<Login navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateEmail={this.updateEmail.bind(this)}/>);
+        return (<Login navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateProfile={this.updateProfile.bind(this)}/>);
       case 'Registration':
         return (<Registration navigator={navigator} updateTitle={this.updateTitle.bind(this)}/>);
       case 'ViewRiders':
         return (<ViewRiders navigator={navigator} updateTitle={this.updateTitle.bind(this)}/>);
       case 'Main':
-        return (<Main navigator={navigator} updateTitle={this.updateTitle.bind(this)} email={this.state.email}/>);
+        return (<Main navigator={navigator} updateTitle={this.updateTitle.bind(this)} profile={this.state.profile}/>);
     }
   }
 

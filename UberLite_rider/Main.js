@@ -10,19 +10,19 @@ import StarRating from 'react-native-star-rating';
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
 import {initState, domain, mapAPI, GOOGLE_API_KEY, FIREBASE_API_KEY, 
-  VIEWING, WATING, ACCEPTED, RIDING, CHECKOUT} from './global.js'
+  VIEWING, WATING, ACCEPTED, RIDING, CHECKOUT, NORMAL, LARGE, SUV} from './global.js'
 import polyline from 'polyline';
 
 
 let windowD = Dimensions.get('window');
 let trip_info = {
     rider_email: null,
-    driver_emial: null,
+    driver_email: null,
     star_location: null,
     end_location: null,
     estimated_price: null,
     price: null,
-    score: null,
+    score: 4,
     post_time: null,
     accepted_time: null,
     pickup_time: null,
@@ -48,7 +48,7 @@ export default class Main extends Component{
                 this.setState({status: ACCEPTED});
                 this.judgeStatus(ACCEPTED);
                 this.getDriverInfo(notification.driver_email);
-                trip_info.driver_emial = notification.driver_email;
+                trip_info.driver_email = notification.driver_email;
                 let driver_gcm_token = JSON.parse(notification.driver_gcm_token);
                 this.setState({driver_gcm_token});
                 this.startGettingDriverGeo(driver_gcm_token);
@@ -163,6 +163,7 @@ export default class Main extends Component{
         }
         else{
           for(var key in state){
+            if(key === 'region') continue;
             let obj = {};
             obj[key] = state[key];
             this.setState(obj);
@@ -228,7 +229,13 @@ export default class Main extends Component{
   estimateTotalPrice(){
     let origins = this.state.startLocation.latitude + ',' + this.state.startLocation.longitude;
     let destinations = this.state.endLocation.latitude + ',' + this.state.endLocation.longitude;
-    let url = mapAPI + '/distancematrix/json?origins=' + origins + '&destinations=' + destinations + '&mode= driving&key=' + GOOGLE_API_KEY
+    let url = mapAPI + '/distancematrix/json?origins=' + 
+      origins + 
+      '&destinations=' + 
+      destinations + 
+      '&mode= driving&key=' + 
+      GOOGLE_API_KEY;
+
     $f.ajax({
       url: url,
       method: 'GET',
@@ -241,7 +248,13 @@ export default class Main extends Component{
           let startDay = days[d.getDay()];
           let startTime = d.getHours() + (d.getMinutes() + 1)/60;
           this.setState({totalMile});
-          let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
+          let url = domain + '/tripPrice?startDay=' + 
+          startDay +'&startTime=' + 
+          startTime + '&totalTime=' + 
+          totalTime + '&totalMile=' + 
+          totalMile + '&per_mile_price_type=normal' +  
+          '&car_type=' + this.state.carType;
+
           $f.ajax({
             url: url,
             method: 'GET',
@@ -289,7 +302,6 @@ export default class Main extends Component{
     this.setState({show_searcher_startingPoint: false});
     this.setState({show_searcher_destination: false});
     this.setState({show_btn_askCar: false});
-    this.setState({show_priceEstimationBoard: false});
 
     var body = {
       startLocation: {
@@ -297,7 +309,8 @@ export default class Main extends Component{
         longitude: this.state.startLocation.longitude
       },
       endLocation: this.state.endLocation,
-      gcm_token: this.state.gcm_token
+      gcm_token: this.state.gcm_token,
+      car_type: this.state.carType
     };
     $f.ajax({
       url: domain + '/ridingRequests/' + this.props.email,
@@ -414,7 +427,12 @@ export default class Main extends Component{
         startTime = this.state.startTime,
         totalTime = (d.getHours() + d.getMinutes()/60 - startTime) * 60,
         totalMile = this.state.totalMile;
-    let url = domain + '/tripPrice?startDay=' + startDay +'&startTime=' + startTime + '&totalTime=' + totalTime + '&totalMile=' + totalMile + '&per_mile_price_type=normal'
+    let url = domain + '/tripPrice?startDay=' + 
+    startDay +'&startTime=' + 
+    startTime + '&totalTime=' + 
+    totalTime + '&totalMile=' + 
+    totalMile + '&car_type=' + this.state.carType
+
     $f.ajax({
       url: url,
       method: 'GET',
@@ -439,53 +457,77 @@ export default class Main extends Component{
   }
 
   onConfirmCheckout(){
-    console.log(this.state.driver_gcm_token.token);
-    $f.gcm({
-      key: FIREBASE_API_KEY,
-      token: this.state.driver_gcm_token.token,
-      data: {
-        tripFinished: true
-      },
-      success: () => {
-        console.log('Send gcm succeeded.');
-        // this.setState({show_checkoutBoard: false});
-      },
-      error: () => {
+    console.log(trip_info);
+    $f.ajax({
+      url: domain + '/tripInfo',
+      method: 'POST',
+      body: trip_info,
+      success: (result) => {
+        if(result.success){
+          $f.gcm({
+            key: FIREBASE_API_KEY,
+            token: this.state.driver_gcm_token.token,
+            data: {
+              tripFinished: true
+            },
+            success: () => {
+              console.log('Send gcm succeeded.');
+              // this.setState({show_checkoutBoard: false});
+            },
+            error: () => {
 
+            }
+          });
+
+          this.setState({show_thanksBoard: true});
+          this.setState({show_checkoutBoard: false});
+
+          Animated.sequence([ 
+            Animated.spring(          // Uses easing functions
+              this.state.bounceInValue,    // The value to drive
+              {
+                toValue: 1,
+                friction: 7,
+                tension: 40
+              }            // Configuration
+            ),
+            Animated.delay(1000),
+            Animated.spring(          // Uses easing functions
+              this.state.bounceInValue,    // The value to drive
+              {
+                toValue: 0,
+                friction: 7,
+                tension: 35
+              }            // Configuration
+            )
+          ]).start(() => {
+            for(var key in initState){
+              if(key == 'gcm_token') continue;
+              let stateObj = {};
+              stateObj[key] = initState[key];
+              this.setState(stateObj);
+            }
+            this.getCurrentPosition();
+            setTimeout(() => console.log(this.state), 1500);
+          });
+        }
+        else{
+          alert('Sending request failed, please check your network');
+          console.err(result.msg);
+          this.navLogin();
+        }
+      },
+      error: (err) => {
+        console.err(err);
+        alert('Sending request failed, please check your network');
+        this.navLogin();
       }
     });
+  }
 
-    this.setState({show_thanksBoard: true});
-    this.setState({show_checkoutBoard: false});
-
-    Animated.sequence([ 
-      Animated.spring(          // Uses easing functions
-        this.state.bounceInValue,    // The value to drive
-        {
-          toValue: 1,
-          friction: 7,
-          tension: 40
-        }            // Configuration
-      ),
-      Animated.delay(1000),
-      Animated.spring(          // Uses easing functions
-        this.state.bounceInValue,    // The value to drive
-        {
-          toValue: 0,
-          friction: 7,
-          tension: 35
-        }            // Configuration
-      )
-    ]).start(() => {
-      for(var key in initState){
-        if(key == 'gcm_token') continue;
-        let stateObj = {};
-        stateObj[key] = initState[key];
-        this.setState(stateObj);
-      }
-      this.getCurrentPosition();
-      setTimeout(() => console.log(this.state), 1500);
-    });
+  hanlePressOnCarType(carType) {
+    this.setState({carType}, this.estimateTotalPrice.bind(this));
+    this.setState({estimatedPrice: '...'});
   }
 
   render() {
@@ -522,14 +564,30 @@ export default class Main extends Component{
               }});
               this.estimateTotalPrice();
               this.setState({show_btn_askCar: true});
-              this.setState({show_priceEstimationBoard: true});
             }}
           />
         </Card>
       </Animatable.View>
     ) : null;
 
-    const priceEstimationBoard = this.state.show_priceEstimationBoard ? (
+    let carType = this.state.carType;
+    const carTypeBoard = this.state.show_btn_askCar ? (
+      <Animatable.View animation="fadeInUp" duration={350}>
+        <View style={styles.carTypeBoard}>
+          <Card style={[styles.carType, carType === NORMAL ? styles.carTypeBoard_selected : null]} onPress={this.hanlePressOnCarType.bind(this, NORMAL)}>
+            <Text>{'Normal'}</Text>
+          </Card>
+          <Card style={[styles.carType, carType === LARGE ? styles.carTypeBoard_selected : null]} onPress={this.hanlePressOnCarType.bind(this, LARGE)}>
+            <Text>{'Large'}</Text>
+          </Card>
+          <Card style={[styles.carType, carType === SUV ? styles.carTypeBoard_selected : null]} onPress={this.hanlePressOnCarType.bind(this, SUV)}>
+            <Text>{'SUV'}</Text>
+          </Card>
+        </View>
+      </Animatable.View>
+    ) : null;
+
+    const priceEstimationBoard = this.state.show_btn_askCar ? (
       <Animatable.View animation="fadeInUp" duration={350}>
         <Card style={styles.priceEstimationBoard}>
           <Text>{this.state.estimatedPrice ? 'Estimated Price: ' + this.state.estimatedPrice : 'Estimating Price...'}</Text>
@@ -650,6 +708,7 @@ export default class Main extends Component{
           {searcher_destination}
         </View>
         <View style={styles.confirm}>
+          {carTypeBoard}
           {priceEstimationBoard}
           {btn_askCar}
         </View>
@@ -660,17 +719,6 @@ export default class Main extends Component{
         {watingSpinner}
         {checkoutBoard}
         {thanksBoard}
-
-        <Card style={{
-          position: 'absolute',
-          right: 0,
-          bottom:0,
-          width: 1,
-          height: 8
-        }} onPress={() => {AsyncStorage.removeItem('@uberLiteRider:state');}}>
-          <Text></Text>
-        </Card>
-
       </View>
     );
   }
@@ -712,7 +760,24 @@ const styles = StyleSheet.create({
   priceEstimationBoard: {
     paddingTop: 10,
     paddingBottom: 10,
-    marginBottom: 3
+    marginBottom: 3,
+    marginTop: 6
+  },
+  carTypeBoard: {
+    flex:1,
+    flexDirection: 'row',
+    marginBottom: 3,
+  },
+  carType: {
+    'flex':1,
+    paddingTop: 10,
+    paddingBottom: 10,
+    alignItems: 'center',
+    marginBottom: 0
+  },
+  carTypeBoard_selected: {
+    borderWidth: 1,
+    borderColor: MKThemeColor
   },
   shade: {
     position: 'absolute',

@@ -171,7 +171,6 @@ router.post('/riders/:email/registrationInfo', function(req, res) {
     }
     var email = req.params.email;
     var password = req.body.password;
-    var hashedPassword = passwordHash.generate(password);
     var full_name = req.body.full_name;
     var creditCard_number=req.body.creditCard_number;
     var creditCard_name=req.body.creditCard_name;
@@ -330,6 +329,7 @@ router.post('/ridingRequests/:email',ensureAuthenticated,function(req,res){
 
   req.checkBody("startLocation", "Enter a valid startLocation.").notEmpty();
   req.checkBody("endLocation", "Enter a valid endLocation.").notEmpty();
+  req.checkBody("car_type", "Enter a valid car type.").notEmpty();
   var errors = req.validationErrors();
   if (errors) {
     var re = {};
@@ -342,6 +342,7 @@ router.post('/ridingRequests/:email',ensureAuthenticated,function(req,res){
   var ridingRequestInfo = {
     startLocation: req.body.startLocation,
     endLocation: req.body.endLocation,
+    car_type:req.body.car_type,
     status: WATING,
     gcm_token: req.body.gcm_token
   };
@@ -474,7 +475,8 @@ router.get('/tripPrice',ensureAuthenticated,function(req,res,next){
   var startTime=req.query.startTime;
   var totalTime = req.query.totalTime;
   var totalMile = req.query.totalMile;
-  var per_KM_price_type = req.query.per_KM_price_type||"normal";
+  var car_type = req.query.car_type;
+  var per_KM_price_type = car_type;
   var totalPrice;
   var currentPricePerMin;
   var r = {};
@@ -502,9 +504,7 @@ router.get('/tripPrice',ensureAuthenticated,function(req,res,next){
             return res.send(r);
           }
           else {
-            console.log(currentPricePerMin, totalTime, totalMile);
-            totalPrice = currentPricePerMin*totalTime+totalMile*(reply.normal_price);
-              console.log(reply.normal_price);
+            totalPrice = currentPricePerMin*totalTime+totalMile*(reply.price);
             r.success=true;
             r.msg= "success";
             r.data= {"totalPrice":totalPrice.toFixed(2)};
@@ -520,7 +520,7 @@ router.get('/tripPrice',ensureAuthenticated,function(req,res,next){
 router.post('/ridingRecords',ensureAuthentication,function(req,res){
 
   req.checkBody("rider_email", "Enter a valid rider email.").isEmail();
-  req.checkBody("driver_emial", "Enter a valid driver emial.").isEmail();
+  req.checkBody("driver_email", "Enter a valid driver emial.").isEmail();
   req.checkBody("star_location", "Enter a valid star location.").notEmpty();
   req.checkBody("end_location", "Enter a valid end location.").notEmpty();
   req.checkBody("price", "Enter a valid price.").isFloat();
@@ -543,7 +543,7 @@ router.post('/ridingRecords',ensureAuthentication,function(req,res){
     else {
       var record = {
         rider_email:req.body.rider_email,
-        driver_emial:req.body.driver_emial,
+        driver_email:req.body.driver_email,
         star_location:reply.startLocation,
         end_location:reply.endLocation,
         price:req.body.price,
@@ -598,13 +598,15 @@ router.delete('/ridingRequest/:email',ensureAuthenticated,function(req,res,next)
 
 
 
-router.post('/UnsuccessfulTripInformation',ensureAuthenticated,function(req,res,next){
+router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
   var r = {};
   var trip = {
     rider_email:req.body.rider_email,
-    driver_emial:req.body.driver_emial,
-    start_time:req.body.start_time,
-    end_time:req.body.end_time,
+    driver_email:req.body.driver_email,
+    post_time:req.body.post_time,
+    accepted_time:req.body.accepted_time,
+    pickup_time:req.body.pickup_time,
+    arrival_time:req.body.arrival_time,
     star_location : req.body.star_location,
     end_location : req.body.end_location,
     estimated_price:req.body.estimated_price,
@@ -627,186 +629,188 @@ router.post('/UnsuccessfulTripInformation',ensureAuthenticated,function(req,res,
 
 
 
-  router.post('/tripInformation',ensureAuthenticated,function(req, res){
-    try {
-      var callbackCheck = 0;
-      var r = {};
-      var trip = {
-        rider_email:req.body.rider_email,
-        driver_emial:req.body.driver_emial,
-        start_time:req.body.start_time,
-        end_time:req.body.end_time,
-        star_location : req.body.star_location,
-        end_location : req.body.end_location,
-        estimated_price:req.body.estimated_price,
-        price:req.body.price,
-        score:req.body.score
-      };
-      db.createTrip(trip, function(err,result){
-        callbackCheck++;
-        if (err) {
-          r.success=false;
-          r.msg = err;
-        }else {
-          r.success=true;
-          r.msg = "payement success";
-          r.data = result
-        }
-        if(callbackCheck >= 4){
-          res.send(r);
-        }
-      });
-
-      var paymentRecod = {
-        rider_email:req.body.rider_email,
-        driver_emial:req.body.driver_email,
-        price:req.body.price
+router.post('/tripInfo',ensureAuthenticated,function(req, res){
+  try {
+    var callbackCheck = 0;
+    var r = {};
+    var trip = {
+      rider_email:req.body.rider_email,
+      driver_email:req.body.driver_email,
+      post_time:req.body.post_time,
+      accepted_time:req.body.accepted_time,
+      pickup_time:req.body.pickup_time,
+      arrival_time:req.body.arrival_time,
+      star_location : req.body.star_location,
+      end_location : req.body.end_location,
+      estimated_price:req.body.estimated_price,
+      price:req.body.price,
+      score:req.body.score
+    };
+    db.createTrip(trip, function(err,result){
+      callbackCheck++;
+      if (err) {
+        r.success=false;
+        r.msg = err;
+      }else {
+        r.success=true;
+        r.msg = "payement success";
+        r.data = result
       }
-      db.paymentRecordCreate(paymentRecod, function(err,result){
-        callbackCheck++;
-        if (err) {
-          r.success=false;
-          r.msg = err;
-        }else {
-          r.success=true;
-          r.msg = "payment success";
-          r.data = result
-        }
-        if(callbackCheck >= 4){
-          res.send(r);
-        }
-      });
+      if(callbackCheck >= 4){
+        return res.send(r);
+      }
+    });
 
-      db.getEvaluationByEmail(req.body.driver_email, function(err,result){
-        callbackCheck++;
-        if (err) {
-          r.success=false;
-          r.msg = err;
-        }else if (result==null) {
-          var evaluation = {
-            driver_emial:req.body.driver_email,
-            score:[],
-            driver_status:"NORMAL"
+    var paymentRecod = {
+      rider_email:req.body.rider_email,
+      driver_email:req.body.driver_email,
+      price:req.body.price
+    }
+    db.paymentRecordCreate(paymentRecod, function(err,result){
+      callbackCheck++;
+      if (err) {
+        r.success=false;
+        r.msg = err;
+      }else {
+        r.success=true;
+        r.msg = "payment success";
+        r.data = result
+      }
+      if(callbackCheck >= 4){
+        return res.send(r);
+      }
+    });
+
+    db.getEvaluationByEmail(req.body.driver_email, function(err,result){
+      callbackCheck++;
+      if (err) {
+        r.success=false;
+        r.msg = err;
+      }else if (result==null) {
+        var evaluation = {
+          driver_email:req.body.driver_email,
+          score:[],
+          driver_status:"NORMAL"
+        }
+        evaluation.score.push(req.body.score);
+        db.createEvaluation(evaluation,function(err,result){
+          if (err) {
+            r.success = false;
+            r.msg = err;
+            return res.send(r);
+          }else {
+            r.success = true;
+            r.msg = "The driver is first to be evaluated"
+
           }
-          evaluation.score.push(req.body.score);
-          db.createEvaluation(evaluation,function(err,result){
+        })
+      }
+      else if(result!=null){
+        result.score.push(req.body.score);
+        if (result.driver_status=="NORMAL") {
+          db.getEvaluationParams("NORMAL",function(err,params){
             if (err) {
-              r.success = false;
-              r.msg = err;
+              r.success=false;
+              r.msg=err;
               return res.send(r);
             }else {
-              r.success = true;
-              r.msg = "The driver is first to be evaluated"
+              //if length > standard
+              if (result.score.length>params.normal_standard_length) {
+                result.score.shift();
+              }
+              result.score.push(req.body.score);
+              var sum = 0;
+              for (var i = 0; i < req.body.score.length; i++) {
+                sum+=req.body.score[i];
+              }
+              var average = sum/req.body.score.length;
+              if (average<params.standard_average) {
+                result.score = [];
+                result.driver_status="WARN";
+              }
+
+              db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
+                if (err) {
+                  r.success=false;
+                  r.msg = err;
+                }
+                else {
+                  r.success = true;
+                }
+              })
+            }
+          })
+        }else if (result.driver_status=="WARN") {
+          db.getEvaluationParams("WARN",function(err,params){
+            if (err) {
+              r.success=false;
+              r.msg=err;
               return res.send(r);
+            }else {
+              //if length > standard
+              if (result.score.length>=params.warn_limit_length) {
+                var sum = 0;
+                var average;
+                for (var i = 0; i < req.body.score.length; i++) {
+                  sum+=array[i];
+                }
+                average = sum/req.body.score.length;
+                result.score = [];
+                if (average>params.warn_standard_average) {
+                  result.driver_status="NORMAL";
+                }else {
+                  result.driver_status = "PROHIBIT";
+                }
+              }
+
+
+              if (average<params.standard_average) {
+                result.score = [];
+                result.driver_status="WARN";
+              }
+
+              db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
+                if (err) {
+                  r.success=false;
+                  r.msg = err;
+                }
+                else {
+                  r.success = true;
+                }
+              })
+
             }
           })
         }
-        else if(result!=null){
-          result.score.push(req.body.score);
-          if (result.driver_status=="NORMAL") {
-            db.getEvaluationParams("NORMAL",function(err,params){
-              if (err) {
-                r.success=false;
-                r.msg=err;
-                return res.send(r);
-              }else {
-                //if length > standard
-                if (result.score.length>params.normal_standard_length) {
-                  result.score.shift();
-                }
-                result.score.push(req.body.score);
-                var sum = 0;
-                for (var i = 0; i < req.body.score.length; i++) {
-                  sum+=req.body.score[i];
-                }
-                var average = sum/req.body.score.length;
-                if (average<params.standard_average) {
-                  result.score = [];
-                  result.driver_status="WARN";
-                }
+      }
+      if(callbackCheck >= 4){
+        return res.send(r);
+      }
+    });
 
-                db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
-                  if (err) {
-                    r.success=false;
-                    r.msg = err;
-                  }
-                  else {
-                    r.success = true;
-                  }
-                })
-              }
-            })
-          }else if (result.driver_status=="WARN") {
-            db.getEvaluationParams("WARN",function(err,params){
-              if (err) {
-                r.success=false;
-                r.msg=err;
-                return res.send(r);
-              }else {
-                //if length > standard
-                if (result.score.length>=params.warn_limit_length) {
-                  var sum = 0;
-                  var average;
-                  for (var i = 0; i < req.body.score.length; i++) {
-                    sum+=array[i];
-                  }
-                  average = sum/req.body.score.length;
-                  result.score = [];
-                  if (average>params.warn_standard_average) {
-                    result.driver_status="NORMAL";
-                  }else {
-                    result.driver_status = "PROHIBIT";
-                  }
-                }
-
-
-                if (average<params.standard_average) {
-                  result.score = [];
-                  result.driver_status="WARN";
-                }
-
-                db.updateEvaluationByEmail(req.body.driver_email,result,function(err,re){
-                  if (err) {
-                    r.success=false;
-                    r.msg = err;
-                  }
-                  else {
-                    r.success = true;
-                  }
-                })
-
-              }
-            })
-          }
-        }
-        if(callbackCheck >= 4){
-          res.send(r);
-        }
-      });
-
-      client.del("ridingRequest:"+req.body.rider_email,function(err,reply){
-        callbackCheck++;
-        if (err) {
-          r.success=false;
-          r.msg= err;
-          return res.send(r);
-        }
-        else {
-          r.success=true;
-          r.msg= "delete this ridingRequest success and save trip and payment record success";
-        }
-        if(callbackCheck >= 4){
-          res.send(r);
-        }
-    })
-    } catch (e) {
-      return res.send(e);
-    }
+    client.del("ridingRequest:"+req.body.rider_email,function(err,reply){
+      callbackCheck++;
+      if (err) {
+        r.success=false;
+        r.msg= err;
+        return res.send(r);
+      }
+      else {
+        r.success=true;
+        r.msg= "delete this ridingRequest success and save trip and payment record success";
+      }
+      if(callbackCheck >= 4){
+        return res.send(r);
+      }
+  })
+  } catch (e) {
+    return res.send(e);
+  }
   //   var callbackCheck = 0;
   //   var r = {};
   //   var trip = {
   //     rider_email:req.body.rider_email,
-  //     driver_emial:req.body.driver_emial,
+  //     driver_email:req.body.driver_email,
   //     start_time:req.body.start_time,
   //     end_time:req.body.end_time,
   //     star_location : req.body.star_location,
@@ -832,7 +836,7 @@ router.post('/UnsuccessfulTripInformation',ensureAuthenticated,function(req,res,
   //
   //   var paymentRecod = {
   //     rider_email:req.body.rider_email,
-  //     driver_emial:req.body.driver_email,
+  //     driver_email:req.body.driver_email,
   //     price:req.body.price
   //   }
   //   db.paymentRecordCreate(paymentRecod, function(err,result){
@@ -857,7 +861,7 @@ router.post('/UnsuccessfulTripInformation',ensureAuthenticated,function(req,res,
   //       r.msg = err;
   //     }else if (result==null) {
   //       var evaluation = {
-  //         driver_emial:req.body.driver_email,
+  //         driver_email:req.body.driver_email,
   //         score:[],
   //         driver_status:"NORMAL"
   //       }
@@ -973,7 +977,7 @@ router.post('/UnsuccessfulTripInformation',ensureAuthenticated,function(req,res,
   //     }
   // })
 
-  })
+})
 
   function ensureAuthenticated(req, res, next) {
     var r = {};

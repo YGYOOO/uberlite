@@ -129,11 +129,6 @@ passport.authenticate('admin-local', function(err,user, info) {
       r.success=true;
       r.data=user;
       req.session.save();
-      console.log("--------post---------");
-      console.log(req.session);
-      console.log(req.user);
-      console.log(req.isAuthenticated());
-      console.log("-----------------");
      return  res.send(r);
     }
   });
@@ -160,7 +155,6 @@ passport.authenticate('admin-local', function(err, user, info) {
       res.send(r);
      }
     else {
-
       r.success=true;
       r.data=user;
      return  res.send(r);
@@ -186,12 +180,8 @@ return res.send(r);
 
 function ensureAuthenticated (req,res,next) {
   var r = {};
-  console.log("--------00000---------");
-  console.log(req.session);
-  console.log(req.user);
-  console.log(req.isAuthenticated());
-  console.log("-----------------");
     if (req.isAuthenticated()) {
+      console.log("admin"+req.user);
       return next(); }
     r.success=false;
     r.msg="authenticate admin failed";

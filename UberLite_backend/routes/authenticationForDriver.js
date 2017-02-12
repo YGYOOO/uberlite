@@ -52,7 +52,7 @@ var passport = require('passport')
     done(null, obj);
   });
 
-  passport.use(new LocalStrategy({
+  passport.use('driver-local',new LocalStrategy({
     passReqToCallback: true,
     usernameField: 'email',
     passwordField: 'password'
@@ -60,7 +60,6 @@ var passport = require('passport')
 ,
     function(req,email, password, done) {
       db.findOneDriver({ email: req.body.email }, function(err, user) {
-          console.log("================");
         if (err) { return done(err); }
         if (!user) {
           return done(null, false, { message: 'Incorrect email.' });
@@ -76,11 +75,8 @@ var passport = require('passport')
 
 
 router.post('/driverLogin', function(req, res, next) {
-passport.authenticate('local', function(err, user, info) {
+passport.authenticate('driver-local', function(err, user, info) {
   var r = {};
-  console.log("******");
-  console.log(user);
-  console.log("******");
   if (err) {
     r.success=false;
     r.msg=err;
@@ -97,16 +93,25 @@ passport.authenticate('local', function(err, user, info) {
       res.send(r);
      }
     else {
-      r.success=true;
-      r.data=user;
-     return  res.send(r);
+      db.findOneDriver(user,function(err,result){
+        if (err) {
+          r.success=false;
+          r.msg=err;
+          res.send(r);
+        }else {
+          r.success=true;
+          r.data=user;
+          r.data.car_type = result.car_type;
+         return  res.send(r);
+        }
+      })
     }
   });
 })(req, res, next);
 });
 
   router.get('/driverLogin', function(req, res, next) {
-  passport.authenticate('local', function(err, user, info) {
+  passport.authenticate('driver-local', function(err, user, info) {
     var r = {};
     if (err) {
       r.success=false;
@@ -125,9 +130,19 @@ passport.authenticate('local', function(err, user, info) {
         res.send(r);
        }
       else {
-        r.success=true;
-        r.data=user;
-       return  res.send(r);
+        db.findOneDriver(user,function(err,result){
+          if (err) {
+            r.success=false;
+            r.msg=err;
+            res.send(r);
+          }else {
+            r.success=true;
+            r.data=user;
+            r.data.car_type = result.car_type;
+           return  res.send(r);
+          }
+        })
+
       }
     });
   })(req, res, next);
@@ -142,10 +157,10 @@ return res.send(r);
 
 
 function ensureAuthenticated(req, res, next) {
-  console.log(req.session);
   var r = {};
     if (req.isAuthenticated()) {
-      return next(); }
+      return next();
+     }
     r.success=false;
     r.msg="authenticate user failed";
     res.status(302).send(r);

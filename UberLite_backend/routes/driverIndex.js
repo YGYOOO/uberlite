@@ -30,22 +30,6 @@ var passwordHash = require('password-hash');
 //var hashedPassword = passwordHash.generate('password123');
 
 
-var User = require('../userModel/driverModel');
-//
-// var myHasher = function(password, tempUserData, insertTempUser, callback) {
-//   var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
-//   return insertTempUser(hash, tempUserData, callback);
-// };
-//
-// // async version of hashing function
-// myHasher = function(password, tempUserData, insertTempUser, callback) {
-//   bcrypt.genSalt(8, function(err, salt) {
-//     bcrypt.hash(password, salt, function(err, hash) {
-//       return insertTempUser(hash, tempUserData, callback);
-//     });
-//   });
-// };
-//declare const
 const WATING = "WATING";
 const ACCEPTED = "ACCEPTED";
 const RIDING = "RIDING";
@@ -104,7 +88,6 @@ nev.configure({
   passwordFieldName: 'password',
 }, function(err, options) {
   if (err) {
-    console.log(err);
     return;
   }
 
@@ -222,7 +205,7 @@ router.post('/drivers/:email/registrationInfo', function(req, res) {
   req.checkBody("creditCard_name", "Enter a valid creditCard name.").notEmpty();
   req.checkBody("age", "Enter a valid age.").isInt();
   req.checkBody("sex", "Enter a valid sex.").isAlpha();
-
+  req.checkBody("car_type","Enter a valid car type").notEmpty();
   var errors = req.validationErrors();
   if (errors) {
     var re = {};
@@ -271,6 +254,7 @@ router.post('/drivers/:email/registrationInfo', function(req, res) {
       var licence_number = req.body.licence_number;
       var age = req.body.age;
       var sex = req.body.sex;
+      var car_type = req.body.car_type;
       var score=5;
       var newUser = new User({
        email: email,
@@ -282,6 +266,7 @@ router.post('/drivers/:email/registrationInfo', function(req, res) {
        licence_number:licence_number,
        active:false,
        authorized:false,
+       car_type:car_type,
        driver_picture:driver_p_id,
        car_picture:car_p_id,
        licence_picture:licence_p_id
@@ -440,22 +425,40 @@ router.get('/geo/riders',ensureAuthenticated,function(req,res){
       var lo = req.query.longitude;
       var la = req.query.latitude;
       var radius = req.query.radius;
+      var car_type = req.query.car_type;
       riderStartLocation.radius({longitude:lo,latitude:la},radius,options,function(err,reply){
-        reply = reply.filter(function(rider){
-          return rider.status = WATING;
-        });
-        var re ={};
-        if (err) {
-          re.success=false;
-          re.msg = "search nearby riders failed";
-          return res.send(re);
-        }
-        else {
-          resuccess=true;
+        let ridingRequests = [];
+        let asynCount = reply.length;
+        if(asynCount <= 0) {
+          var re ={};
+          re.success=true;
           re.msg= "search nearby riders success";
-          re.data= reply;
+          re.data = ridingRequests;
           return res.send(re);
         }
+        reply.forEach(function(rider) {
+          client.get("ridingRequest:"+rider.key, function(err,ridingRequest){
+            ridingRequest = JSON.parse(ridingRequest);
+            if(ridingRequest.status == WATING && ridingRequest.car_type == car_type){
+              ridingRequests.push(rider);
+            }
+            asynCount--;
+            if(asynCount <= 0) {
+              var re ={};
+              if (err) {
+                re.success=false;
+                re.msg = "search nearby riders failed";
+                return res.send(re);
+              }
+              else {
+                re.success=true;
+                re.msg= "search nearby riders success";
+                re.data = ridingRequests;
+                return res.send(re);
+              }
+            }
+          });
+        });
       });
 });
 
@@ -502,7 +505,12 @@ router.put('/ridingRequests/:email',ensureAuthenticated,function(req,res){
         r.success=false;
         r.msg="This rider's request has been accepted by another driver.";
         return res.send(r);
-      }else {
+      }else if(reply.car_type!=req.body.car_type){
+        r.success=false;
+        r.msg="This rider's request "+reply.car_type+" type car.";
+        return res.send(r);
+      }
+      else {
         riderStartLocation.removeLocation(req.params.email,function(err,reply){
           if (err) {
             r.success=false;
@@ -610,7 +618,6 @@ router.put('/ridingRequests/:email/status',ensureAuthenticated,function(req,res)
         }
         else {
           r.success=false;
-          //send a err msg
           r.msg= "";
           return res.send(r);
         }
@@ -630,12 +637,6 @@ router.put('/ridingRequests/:email/status',ensureAuthenticated,function(req,res)
 }//valid
 })
 
-router.get('/testInfo',ensureAuthenticated,function(req,res,next){
-  var r = {};
-  r.success=true;
-  r.msg= "This is testing info";
-  return res.send(r);
-})
 
 router.get('/ridingRequests/:email',ensureAuthenticated, function(req, res, next){
   client.get("ridingRequest:" + req.params.email, function(err, result){
@@ -652,7 +653,5 @@ router.delete('/ridingRequests/:email',ensureAuthenticated,function(req, res, ne
     });
   })
 })
-
-router.po
 
 module.exports = router;

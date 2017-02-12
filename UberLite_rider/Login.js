@@ -1,7 +1,8 @@
 import React, { Component, PropTypes } from 'react';
-import { View, Text, TextInput, StyleSheet, Dimensions, TouchableHighlight } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, TouchableHighlight, Animated, AsyncStorage } from 'react-native';
 import { Button, Card, Toolbar } from 'react-native-material-design';
 import { MKTextField} from 'react-native-material-kit';
+import Animation from 'lottie-react-native';
 
 import {themeColor, MKThemeColor} from './style/Theme.js';
 import {$f} from './modules/functions';
@@ -12,6 +13,14 @@ var window = Dimensions.get('window');
 export default class Login extends Component{
   state = {
     processingLogin: false,
+    progress: new Animated.Value(0),
+  }
+
+    componentDidMount() {
+    Animated.timing(this.state.progress, {
+      toValue: 1,
+      duration: 5000,
+    }).start();
   }
 
   navRegistration(){
@@ -50,6 +59,14 @@ export default class Login extends Component{
   render(){
     return(
       <View style={styles.container} primary={themeColor}>
+      {/*<Animation
+        style={{
+          width: 200,
+          height: 200,
+        }}
+        source={require('./animations/Watermelon.json')}
+        progress={this.state.progress}
+      />*/}
         <TextField placeholder="Email" onChangeText={(email) => this.setState({email})}/>
         <TextField placeholder="Password" onChangeText={(password) => this.setState({password})} password={true}/>
         <View style={styles.loginBtn}>
@@ -58,6 +75,15 @@ export default class Login extends Component{
         <View style={styles.loginBtn}>
           <Button text="SIGN UP" primary={themeColor} onPress={this.navRegistration.bind(this)} raised theme={'dark'}/>
         </View>
+        <Card style={{
+          position: 'absolute',
+          right: 0,
+          bottom:0,
+          width: 1,
+          height: 8
+        }} onPress={() => {AsyncStorage.removeItem('@uberLiteRider:state');}}>
+          <Text></Text>
+        </Card>
       </View>
     )
   }

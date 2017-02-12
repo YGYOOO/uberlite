@@ -3,7 +3,7 @@ var url = "mongodb://xuchaohui:Xu111111@ds046939.mlab.com:46939/myuberlite";
 
 //create a user
 var createTrip = function(db, objTrip, callback){
-  db.collection('trip_information').findOne({email: objTrip.email}, function(err, thing){
+  db.collection('trip_information').findOne(mongodb.ObjectID(objTrip.id), function(err, thing){
     if(!thing){
       db.collection('trip_information').insertOne(objTrip, function(err, writeResult){
         if(writeResult.result.ok !== 1){
