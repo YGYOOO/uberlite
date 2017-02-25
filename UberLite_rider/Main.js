@@ -523,6 +523,40 @@ export default class Main extends Component{
         this.navLogin();
       }
     });
+    let url = mapAPI + `/geocode/json?latlng=${this.state.startLocation.latitude},${this.state.startLocation.longitude}` +
+          `&language=EN&result_type=locality&key=${GOOGLE_API_KEY}`;
+    console.log(url);
+    $f.ajax({
+      url,
+      method: 'GET',
+      success: (result) => {
+        console.log(result)
+        let name = result.results[0].formatted_address.split(',')[0];
+        let geo = [
+          this.state.startLocation.longitude,
+          this.state.startLocation.latitude
+        ];
+        let riding = new Date().getTime();
+        $f.ajax({
+          url: domain + '/statistics/ridingsAmount',
+          method: 'POST',
+          body: {
+            name,
+            geo,
+            riding
+          },
+          success: (result) => {
+            console.log(result);
+          },
+          error: (err) => {
+            console.err(err);
+          }
+        });
+      },
+      error: (err) => {
+        console.err(err);
+      }
+    });
   }
 
   hanlePressOnCarType(carType) {

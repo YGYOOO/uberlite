@@ -32,32 +32,6 @@ var passport = require('passport')
   router.use(passport.session()); //
 
 
-  //
-  // passport.serializeUser(function(user, done) {
-  //   done(null,user._id);
-  // });
-  //
-  // passport.deserializeUser(function(id, done) {
-  //   // console.log("dedededede");
-  //   // db.findAdminById(id, function(err, user) {
-  //   //   done(err, user);
-  //   // });
-  //
-  //   db.findDriverById(id,function(err,user){
-  //     if (err) {
-  //       done(err);
-  //     }
-  //     if (user) {
-  //       done(null,user);
-  //     }else {
-  //       db.findRiderById(id,function(err,user){
-  //         if(err) done(err);
-  //         done(null,user);
-  //       })
-  //     }
-  //   })
-  //
-  // });
 
   passport.serializeUser(function(user, done) {
     done(null, user);
@@ -181,7 +155,6 @@ return res.send(r);
 function ensureAuthenticated (req,res,next) {
   var r = {};
     if (req.isAuthenticated()) {
-      console.log("admin"+req.user);
       return next(); }
     r.success=false;
     r.msg="authenticate admin failed";

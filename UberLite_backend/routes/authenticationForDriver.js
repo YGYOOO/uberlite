@@ -67,6 +67,10 @@ var passport = require('passport')
         if (!passwordHash.verify(req.body.password,user.password)) {
           return done(null, false, { message: 'Incorrect password.' });
         }
+        if (user.status=="PROHIBIT") {
+          return done(null, false, { message: 'The driver is prohibitive.' });
+        }
+        console.log(user);
         return done(null, user);
       });
     }
@@ -158,7 +162,8 @@ return res.send(r);
 
 function ensureAuthenticated(req, res, next) {
   var r = {};
-    if (req.isAuthenticated()) {
+
+    if (req.isAuthenticated()&&req.user.status!="PROHIBIT") {
       return next();
      }
     r.success=false;

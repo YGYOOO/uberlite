@@ -14,17 +14,25 @@
       <ul id="nav-mobile" class="left hide-on-med-and-down">
         <li class="active"><a href="/management/driver">Driver Management</a></li>
         <li><a href="/management/rider">Rider Management</a></li>
+        <li><a href="/management/record">Record</a></li>
+        <li><a href="/management/statistics">Statistics</a></li>
       </ul>
+      <div class="input-field search">
+        <input id="search" type="search" required>
+        <label class="label-icon" for="search"><i class="material-icons">search</i></label>
+        <i class="material-icons">close</i>
+      </div>
     </div>
   </nav>
-  <div class="row">
+  <!--<div class="row">
     <div class="col s3"></div>
     <div class="input-field col s6">
       <i class="material-icons prefix">search</i>
       <input id="search" type="text" required>
       <label for="search"></label>
     </div>
-  </div>
+  </div>-->
+  
   <div class="user-table card-panel grey lighten-5">
     <table class="striped">
       <thead>
@@ -65,12 +73,6 @@
           active($(e.target), id, checked);
         })
 
-        $('#search').on('keyup', function(e){
-          if(e.which == 13){
-            console.log(1);
-            searchDrivers($('.user-table tbody'), $('#search').val(), function(){});
-          }
-        });
       });
     });
   </script>

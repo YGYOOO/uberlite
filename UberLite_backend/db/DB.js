@@ -6,6 +6,7 @@ var pictureDb = require('./pictureDb.js');
 var tripDb = require('./tripDb.js');
 var paymentDb = require('./paymentDb.js');
 var evaluationDb = require('./evaluationDb.js');
+var statisticsDb = require('./statisticsDb.js');
 //the operation to drivers
 //to find drivers
 module.exports.findDrivers = driverDb.driversFind;
@@ -16,8 +17,7 @@ module.exports.registerDriver = driverDb.driverCreate;
 module.exports.findOneDriver = driverDb.driverFindOne;
 module.exports.findOneDriverByEmial = driverDb.driverFindByEmail;
 //to active the driver
-module.exports.updateDriver = driverDb.driverUpdate;
-
+module.exports.updateDriverByEmail = driverDb.driverUpdate;
 module.exports.deleteDriverInTemp = driverDb.TempDriverDeleteByEmail;
 
 //operations to pictures
@@ -70,4 +70,17 @@ module.exports.createUnsuccessfulTrip = tripDb.untripCreate;
 module.exports.createEvaluation = evaluationDb.evaluationCreate;
 module.exports.getEvaluationParams = evaluationDb.getEvaluationParams;
 module.exports.updateEvaluationByEmail = evaluationDb.updateEvaluationByEmail;
-module.exports.getEvaluationByEmail = evaluationDb.getEvaluationByEmail;
+module.exports.getDriverEvaluationByEmail = evaluationDb.getEvaluationByEmail;
+module.exports.toGetEvaluationById = evaluationDb.getEvaluationById;
+
+
+//statistics
+module.exports.createStatistics = statisticsDb.statisticsCreate;
+module.exports.getStatistics = statisticsDb.statisticsFind;
+module.exports.updateStaticsByName = statisticsDb.updateStaticsByName;
+module.exports.getAllStatistics = statisticsDb.findAllStatistics;
+module.exports.getOneStatistics = statisticsDb.findOneStatistics;
+module.exports.deleteStatistics = statisticsDb.toDeleteStatistics;
+module.exports.updateStatistics = statisticsDb.toUpdateStatistics;
+module.exports.updateStatisticsRiding = statisticsDb.toUpdateStatisticsRiding;
+module.exports.updateRidngById = statisticsDb.updateRidingByid;

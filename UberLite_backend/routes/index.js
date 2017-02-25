@@ -1,6 +1,13 @@
 var express = require('express');
 var router = express.Router();
 var db = require('../db/DB.js');
+var client = require('redis').createClient(6380,'UberLite.redis.cache.windows.net', {auth_pass: '2zdj/rRAD8Uo/9zrSK5BUl9asvLtyU4ZRyIYmlFekb8=', tls: {servername: 'UberLite.redis.cache.windows.net'}});
+ var geo = require('georedis').initialize(client,{
+   zset:'mySpecialLocationsSet',
+   nativeGeo:false
+ });
+var riderStartLocation = geo.addSet('riderStartLocation');
+var driverCurrentLocation = geo.addSet('driverCurrentLocation');
 
 router.get('/login', function(req, res, next){
   res.sendFile('login.html', {root:__dirname + '/../public/admin'})
@@ -8,39 +15,52 @@ router.get('/login', function(req, res, next){
 
 //router.use('/management/', requireAuthentication);
 
-router.get('/management/driver', function(req, res, next){
-  res.sendFile('driver.html', {root:__dirname + '/../public/admin'})
+router.get('/management/:file',ensureAuthenticated,function(req, res, next){
+  res.sendFile(req.params.file + '.html', {root:__dirname + '/../public/admin'})
 });
 
-router.get('/management/rider', function(req, res, next){
-  res.sendFile('rider.html', {root:__dirname + '/../public/admin'})
-});
+function ensureAuthenticated(req, res, next) {
+  var r = {};
+    if (req.isAuthenticated()) {
+      return next(); }
+    r.success=false;
+    r.msg="authenticate user failed";
+    res.status(302).send(r);
+  };
 
-// function requireAuthentication(req, res, next){
-//   if(req.session && req.session.user){
-//     db.findOneAdmin(req.session.user, function(err, result){
-//       if(!err && !(result === null) && result.password === req.session.user.password){
-//         next();
-//       }
-//       else{
-//         req.session.user = {};
-//         res.redirect('/login');
-//       }
-//     });
-//   }
-//   else{
-//     req.session.user = {};
-//     res.redirect('/login');
-//   }
-// }
+// router.get('/management/rider', function(req, res, next){
+//   res.sendFile('rider.html', {root:__dirname + '/../public/admin'})
+// });
 
-router.get('/management/driverInfo', function(req, res, next){
-  res.sendFile('driver_info.html', {root:__dirname + '/../public/admin'})
-});
+// router.get('/management/rider', function(req, res, next){
+//   res.sendFile('rider.html', {root:__dirname + '/../public/admin'})
+// });
 
-router.get('/management/riderInfo', function(req, res, next){
-  res.sendFile('rider_info.html', {root:__dirname + '/../public/admin'})
-});
+// // function requireAuthentication(req, res, next){
+// //   if(req.session && req.session.user){
+// //     db.findOneAdmin(req.session.user, function(err, result){
+// //       if(!err && !(result === null) && result.password === req.session.user.password){
+// //         next();
+// //       }
+// //       else{
+// //         req.session.user = {};
+// //         res.redirect('/login');
+// //       }
+// //     });
+// //   }
+// //   else{
+// //     req.session.user = {};
+// //     res.redirect('/login');
+// //   }
+// // }
+
+// router.get('/management/driverInfo', function(req, res, next){
+//   res.sendFile('driver_info.html', {root:__dirname + '/../public/admin'})
+// });
+
+// router.get('/management/riderInfo', function(req, res, next){
+//   res.sendFile('rider_info.html', {root:__dirname + '/../public/admin'})
+// });
 
 // /* GET home page. */
 // router.post('/login',function(req, res, next) {
@@ -165,4 +185,49 @@ router.get('/management/riderInfo', function(req, res, next){
 //   ]);
 // });
 //
+
+router.delete('/redis', (req, res) => {
+  client.flushdb( function (err, succeeded) {
+    if(succeeded) {
+      return res.send(succeeded);
+    }
+    else if (err) {
+      return res.send(err);
+    }
+    res.send('err');
+  });
+});
+
+router.get('/redis', (req, res) => {
+  client.keys('*', function (err, keys) {
+    if (err) return console.log(err);
+
+    for(var i = 0, len = keys.length; i < len; i++) {
+      // console.log(keys)
+      client.get(keys[i], function(err, result){
+        console.log(result);
+        console.log('');
+      })
+    }
+
+  });
+  res.send('');
+});
+
+router.get('/redis/geo', (req, res) => {
+  riderStartLocation.radius({longitude:'-91.2349',latitude:'43.81630599'},10000,{withCoordinates: true},function(err,reply){
+    console.log(reply);
+    console.log('');
+  });
+
+  driverCurrentLocation.radius({longitude:'-91.2349',latitude:'43.81630599'},10000,{withCoordinates: true},function(err,reply){
+    console.log(reply);
+    console.log('');
+  });
+
+  res.send('');
+});
+
+
+
 module.exports = router;

@@ -42,8 +42,32 @@ module.exports.evaluationCreate = function(obj,callback){
 }
 
 
-var getDriverEvaluation= function(db, email, callback){
-  db.collection('driver_evaluation').findOne({email:email}, function(err,thing){
+
+var getDriverEvaluationById= function(db, id, callback){
+  db.collection('driver_evaluation').findOne(mongodb.ObjectID(id), function(err,thing){
+    db.close();
+    if(thing){
+      callback(null,thing);
+    }
+    else {
+      callback(null,null);
+    }
+  });
+}
+
+module.exports.getEvaluationById = function(id, callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      getDriverEvaluationById(db,id,callback);
+    }
+  });
+}
+
+var getDriverEvaluationByEmail= function(db, email, callback){
+  db.collection('driver_evaluation').findOne({driver_email:email}, function(err,thing){
     db.close();
     if(thing){
       callback(null,thing);
@@ -60,14 +84,14 @@ module.exports.getEvaluationByEmail = function(email, callback){
       callback(err,null);
     }
     else {
-      getDriverEvaluation(db,email,callback);
+      getDriverEvaluationByEmail(db,email,callback);
     }
   });
 }
 
 
 var updateDriverEvaluationByEmail = function(db,email,obj,callback){
-  db.collection('driver_evaluation').updateOne({email:email},obj,function(err,thing){
+  db.collection('driver_evaluation').updateOne({driver_email:email},obj,function(err,thing){
     db.close();
     if(thing){
       callback(null,thing);

@@ -95,8 +95,8 @@ module.exports.driverFindById = function(id, callback){
 }
 
 
-var updateDriver = function(db, id, obj, callback){
-  db.collection('driver').update({_id: mongodb.ObjectId(id)}, {$set: obj}, function(err, result){
+var updateDriver = function(db, email, obj, callback){
+  db.collection('driver').update({email: email}, {$set: obj}, function(err, result){
     db.close();
     if(result.result.ok !== 1){
       callback(err, null);
@@ -107,13 +107,13 @@ var updateDriver = function(db, id, obj, callback){
   });
 }
 
-module.exports.driverUpdate = function(id, obj, callback){
+module.exports.driverUpdate = function(email, obj, callback){
   mongodb.connect(url,function(err,db){
     if(err){
       callback(err,null);
     }
     else {
-      updateDriver(db, id, obj, callback);
+      updateDriver(db, email, obj, callback);
     }
   });
 };

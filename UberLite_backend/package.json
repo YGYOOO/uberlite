@@ -23,6 +23,7 @@
     "multer": "^1.2.0",
     "node-gcm": "^0.14.4",
     "nodemailer": "~2.6.4",
+    "nodemailer-smtp-transport": "^2.7.2",
     "passport": "*",
     "passport-local": "*",
     "password-hash": "~1.2.2",

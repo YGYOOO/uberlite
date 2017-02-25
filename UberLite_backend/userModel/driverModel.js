@@ -10,6 +10,7 @@ var driverSchema = mongoose.Schema({
   license_number:String,
   phone:String,
   score:Number,
+  status:String,
   active:Boolean,
   authorized:Boolean,
   driver_picture:String,

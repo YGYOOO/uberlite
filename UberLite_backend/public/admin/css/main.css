@@ -41,3 +41,25 @@
 .rider-info input{
   color: black !important;
 }
+
+#container {
+  height: 100%;
+  width:100%;
+}
+
+.search {
+  width: 400px;
+  float: right;
+}
+
+.selector-time {
+  position: absolute;
+  right: 10px;
+  width: 200px;
+  /*float: right;*/
+}
+
+.caret {
+  color:white !important;
+  top: 0 !important;
+}

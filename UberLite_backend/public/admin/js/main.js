@@ -55,7 +55,7 @@ function getAllDrivers($ele, callback){
 
 function searchDrivers($ele, name, callback){
   $.ajax({
-    url: "/drivers?full_name=" + name,
+    url: "/drivers?email=" + name,
     method: "GET",
   }).done(function(result){
     listAllDrivers(result.data, $ele);
@@ -83,7 +83,7 @@ function listAllDrivers(drivers, $ele){
       '<tr><td>'+ e.full_name + '</td>' +
       '<td>'+ e.email + '</td>' +
       '<td>********</td>' +
-      '<td>'+ e.score + '</td>' +
+      '<td>'+ parseFloat(e.score).toFixed(2) + '</td>' +
       '<td class="authorized">'+ htmlAuthorized + '</td>' +
       '<td class="active">'+ htmlActive +'</td><td><i class="info fa fa-info-circle fa-lg" aria-hidden="true"></i></td></tr>'
     );
@@ -121,14 +121,27 @@ function getAllRiders($ele, callback){
   });
 }
 
+function searchRiders($ele, name, callback){
+  $.ajax({
+    url: "/riders?email=" + name,
+    method: "GET",
+  }).done(function(result){
+    listAllRiders(result.data, $ele);
+    callback();
+  }).fail(function(result){
+
+  });
+}
+
 function listAllRiders(riders, $ele){
+  $ele.html('');
   var rawHtmlActive, htmlActive;
   rawHtmlActive = '<input type="checkbox" id="driver_active_{}" checked="checked"/><label for="driver_active_{}"></label>';
   riders.forEach(function(e){
     htmlActive = rawHtmlActive.replace(/{}/g,e._id);
-    if(!e.active){
-      htmlActive = htmlActive.replace(/checked="checked"/, "");
-    }
+    // if(!e.active){
+    // htmlActive = htmlActive.replace(/checked="checked"/, "");
+    // }
     $ele.append(
       '<tr><td>'+ e.full_name + '</td>' +
       '<td>'+ e.email + '</td>' +
@@ -167,3 +180,13 @@ function active($ele, id, active){
     //---------------之后再写-------------
   });
 }
+
+$(document).ready(function() {
+  $('select').material_select();
+
+  $('#search').on('keyup', function(e){
+    if(e.which == 13){
+      searchRiders($('.user-table tbody'), $('#search').val(), function(){});
+    }
+  });
+});
