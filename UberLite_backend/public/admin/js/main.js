@@ -33,11 +33,21 @@ function getDriverInfo($ele, id){
 function fillDriverInfo(driver, $ele){
   $ele.find('input').each(function(index, e){
     var id = $(e).attr('id');
+    if (id === 'password') return;
     var val = driver[id];
     $(e).val(val);
   });
+  $ele.find('img').each(function(index, e) {
+    $(e).attr('src', '/img/' + driver[$(e).attr('class')])
+  })
   if(!driver.authorized){
     $('.approve').css('display', 'block');
+  }
+  if (driver.active) {
+    $('.driver-info .checkbox').html('<input type="checkbox" checked="checked"/><label>Active</label>');
+  }
+  if (driver.authorized) {
+    $('.driver-info .checkbox').html('<input type="checkbox" checked="checked"/><label>Authorized</label>');
   }
 }
 
@@ -179,6 +189,31 @@ function active($ele, id, active){
   }).fail(function(result){
     //---------------之后再写-------------
   });
+}
+
+function getTripInfos($ele, startTime = new Date().getTime() - 1000*24*3600*10, endTime = new Date().getTime()) {
+  $.ajax({
+    url: "/tripInfo?start=" + startTime + '&end=' + endTime,
+    method: "GET",
+  }).done(function(result){
+    listTripInfos(result.data, $ele);
+    // callback();
+  }).fail(function(result){
+
+  });
+}
+
+function listTripInfos(data, $ele) {
+  $ele.html('');
+
+  var content = data.map(function(info) {
+    return  '<tr><td>'+ info.driver_email + '</td>' +
+      '<td>' + info.rider_email + '</td>' +
+      '<td>' + new Date(info.arrival_time) + '</td>' +
+      '<td>' + info.price + '</td>' +
+      '<td>'+ info.score + '</td></tr>';
+  });
+  $ele.html(content.join(''));
 }
 
 $(document).ready(function() {

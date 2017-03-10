@@ -23,7 +23,8 @@ import Main from './Main'
 
 export default class UberLite_driver extends Component {
   state = {
-    title: 'Sign In'
+    title: 'Sign In',
+    show_backspace: false,
   }
 
   updateTitle(title){
@@ -34,12 +35,16 @@ export default class UberLite_driver extends Component {
     this.setState({profile});
   }
 
+  updateIcon(show_backspace) {
+    this.setState({show_backspace});
+  }
+
   navigatorRenderScene(route, navigator) {
     switch(route.title) {
       case 'Login':
-        return (<Login navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateProfile={this.updateProfile.bind(this)}/>);
+        return (<Login navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateIcon={this.updateIcon.bind(this)} updateProfile={this.updateProfile.bind(this)}/>);
       case 'Registration':
-        return (<Registration navigator={navigator} updateTitle={this.updateTitle.bind(this)}/>);
+        return (<Registration navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateIcon={this.updateIcon.bind(this)}/>);
       case 'ViewRiders':
         return (<ViewRiders navigator={navigator} updateTitle={this.updateTitle.bind(this)}/>);
       case 'Main':
@@ -51,7 +56,7 @@ export default class UberLite_driver extends Component {
     return (
       <Navigator
         navigationBar={
-          <Toolbar title={this.state.title}/>
+          <Toolbar title={this.state.title} show_backspace={this.state.show_backspace} updateIcon={this.updateIcon.bind(this)}/>
           }
           // navigator = {() => {}}
         initialRoute={{title: 'Login'}}

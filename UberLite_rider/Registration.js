@@ -24,6 +24,10 @@ export default class Registration extends Component{
       .build();
   }
 
+  componentWillMount() {
+    this.props.updateIcon(true);
+  }
+
   state = {
     riderShot: require('./img/avatar_blank.jpg'),
     defaultRiderShot: true,
@@ -74,11 +78,11 @@ export default class Registration extends Component{
       this.popupDialog.openDialog();
       return;
     }
-    if(!this.state.sex){
-      this.setState({msg: 'Please fill your sex.'});
-      this.popupDialog.openDialog();
-      return;
-    }
+    // if(!this.state.sex){
+    //   this.setState({msg: 'Please fill your sex.'});
+    //   this.popupDialog.openDialog();
+    //   return;
+    // }
     if(!this.state.creditCard_number){
       this.setState({msg: 'Please fill your credit card number.'});
       this.popupDialog.openDialog();
@@ -103,7 +107,7 @@ export default class Registration extends Component{
           password: this.state.password,
           full_name: this.state.given_name + ' ' + this.state.last_name,
           age: this.state.age,
-          sex: this.state.sex,
+          // sex: this.state.sex,
           creditCard_number: this.state.creditCard_number,
           creditCard_name: this.state.creditCard_name,
           creditCard_expire: this.state.creditCard_expire,
@@ -207,7 +211,7 @@ export default class Registration extends Component{
         <TextField placeholder="Last Name" onChangeText={(last_name) => this.setState({last_name})} onFocus={this.checkEmail.bind(this)}/>
         <TextField placeholder="Given Name" onChangeText={(given_name) => this.setState({given_name})} onFocus={this.checkEmail.bind(this)}/>
         <TextField placeholder="Age" onChangeText={(age) => this.setState({age})} onFocus={this.checkEmail.bind(this)}/>
-        <TextField placeholder="Sex" onChangeText={(sex) => this.setState({sex})} onFocus={this.checkEmail.bind(this)}/>
+        {/*<TextField placeholder="Sex" onChangeText={(sex) => this.setState({sex})} onFocus={this.checkEmail.bind(this)}/>*/}
         <View style={styles.creditCardView}>
           <Text style={{marginBottom: -10}}>Credit Card</Text>
           <TextField placeholder="Number" onChangeText={(creditCard_number) => this.setState({creditCard_number})} onFocus={this.checkEmail.bind(this)}/>

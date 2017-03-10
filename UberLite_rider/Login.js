@@ -16,7 +16,7 @@ export default class Login extends Component{
     progress: new Animated.Value(0),
   }
 
-    componentDidMount() {
+  componentDidMount() {
     Animated.timing(this.state.progress, {
       toValue: 1,
       duration: 5000,

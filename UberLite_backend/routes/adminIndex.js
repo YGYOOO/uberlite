@@ -3,12 +3,26 @@ var router = express.Router();
 var db = require('../db/DB.js');
 var bodyParser = require('body-parser');
 var validator = require('express-validator');
+var multer = require("multer");
+var upload = multer({dest: "../public/uploads"});
+var mongoose = require('mongoose');
+
+var gfs;
+
+var Grid = require("gridfs-stream");
+var conn = mongoose.connection;
+conn.once("open", function(){
+  gfs = Grid(conn.db);
+  router.get("/", function(req,res){
+
+  });
+  });
 router.use(bodyParser.urlencoded({ extended: false }));
 router.use(validator());
 
 
 //all the picture getting from here
-router.get('/picture/:id',ensureAuthenticated,function(req,res,next){
+router.get('/picture/:id',function(req,res,next){
   var r = {};
   try {
     req.checkParams("id", "Enter a valid id.").notEmpty();
@@ -40,10 +54,10 @@ router.get('/picture/:id',ensureAuthenticated,function(req,res,next){
 });
 
 
-router.get('/showPicture/:filename',ensureAuthenticated, function(req, res){
+router.get('/img/:id',loggedIn, function(req, res){
   var r = {};
   try {
-    req.checkParams("filename","Enter a valid filename.").notEmpty();
+    req.checkParams("id","Enter a valid picture id.").notEmpty();
     var errors = req.validationErrors();
     if (errors) {
       var re = {};
@@ -51,7 +65,7 @@ router.get('/showPicture/:filename',ensureAuthenticated, function(req, res){
       re.error= errors;
       return res.send(re);
     } else {
-      var readstream = gfs.createReadStream({filename: req.params.filename});
+      var readstream = gfs.createReadStream({_id: req.params.id});
       readstream.on("error", function(err){
         res.send("No image found with that title");
       });
@@ -74,6 +88,17 @@ function ensureAuthenticated(req, res, next) {
     r.msg="authenticate user failed";
     res.status(302).send(r);
   };
+
+  function loggedIn(req, res, next) {
+    var r = {};
+      if (req.user) {
+          next();
+      } else {
+        r.success=false;
+        r.msg="authenticate user failed";
+        res.status(302).send(r);
+      }
+  }
 
 
 //to search drivers
@@ -148,7 +173,7 @@ router.put('/activeDriver',ensureAuthenticated,function(req,res,next){
   }
 });
 
-router.put('/driver/:id',ensureAuthenticated,function(req,res,next){
+router.put('/driver/:id',function(req,res,next){
   try {
     req.checkParams("id","Enter a valid id").notEmpty();
     var errors = req.validationErrors();
@@ -159,16 +184,27 @@ router.put('/driver/:id',ensureAuthenticated,function(req,res,next){
       return res.send(re);
     } else{
       var r = {};
-      db.updateDriver(req.params.id, req.body, function(err, result){
+      db.findDriverById(req.params.id,function(err,thing){
         if (err) {
           r.success = false;
           r.msg = err;
-        }
-        else {
-          r.success = true;
           res.send(r);
+        }else {
+          thing.authorized = req.body.authorized;
+          thing.active = req.body.active;
+          db.updateDriverById(req.params.id,thing, function(err, result){
+            if (err) {
+              r.success = false;
+              r.msg = err;
+            }
+            else {
+              r.success = true;
+              res.send(r);
+            }
+          });
         }
-      });
+      })
+
     }
   } catch (e) {
     res.send(e);
@@ -202,6 +238,12 @@ router.get('/riders',ensureAuthenticated, function(req, res, next) {
 router.get('/rider/:id',ensureAuthenticated, function(req, res, next) {
   try {
     req.checkParams("id","Enter a valid id").notEmpty();
+    req.checkBody("email","Enter a valid email").notEmpty();
+    req.checkBody("id","Enter a valid id").notEmpty();
+    req.checkBody("id","Enter a valid id").notEmpty();
+    req.checkBody("id","Enter a valid id").notEmpty();
+    req.checkBody("id","Enter a valid id").notEmpty();
+    req.checkBody("id","Enter a valid id").notEmpty();
     var errors = req.validationErrors();
     if (errors) {
       var re = {};
@@ -240,7 +282,6 @@ router.get('/drivers/:id/score',ensureAuthenticated,function(req,res,next){
       } else {
         var sum = 0;
         var average;
-        console.log(result);
         for (var i = 0; i < result.score.length; i++) {
           sum+=result.score[i];
         }
@@ -458,65 +499,73 @@ router.put('/statistics/ridings',function(req,res,next){
   }
 })
 
+router.get('/tripInfo/:id',function(req,res,next){
+  var r = {};
+  try {
+    req.checkParams("id","Enter a valid id").notEmpty();
+    var errors = req.validationErrors();
+    if (errors) {
+      var re = {};
+      re.success = false;
+      re.error= errors;
+      return res.send(re);
+    } else{
+      db.getTripInfoFindById(req.params.id,function(err,result){
+        if (err) {
+          r.success = false;
+          r.msg = err;
+          res.send(r);
+        }else {
+          r.success = true;
+          r.msg = "Get Trip by id  success";
+          r.data = result;
+          res.send(r);
+        }
+      })
+    }
+  } catch (e) {
+    res.send(e);
+  }
+})
 
+router.get('/tripInfo',function(req,res,next){
+  try {
+    req.checkQuery("start","Enter a valid start").notEmpty();
+    req.checkQuery("end","Enter a valid end").notEmpty();
+    var errors = req.validationErrors();
+    if (errors) {
+      var re = {};
+      re.success = false;
+      re.error= errors;
+      return res.send(re);
+    } else{
+      var r = {};
 
-// router.delete('/statistics/ridingsAmount',ensureAuthenticated,function(req,res,next){
-//   try {
-//     req.checkQuery("max","Enter a valid max").notEmpty();
-//     req.checkQuery("min","Enter a valid min").notEmpty();
-//     req.checkQuery("riding","Enter a valid riding").notEmpty();
-//     var errors = req.validationErrors();
-//     if (errors) {
-//       var re = {};
-//       re.success = false;
-//       re.error= errors;
-//       return res.send(re);
-//     } else{
-//       var r = {};
-//       var max = req.query.max;
-//       var end = req.query.end;
-//       db.getAllStatistics(function(err,result){
-//         if (err) {
-//           r.success =false;
-//           r.msg = err;
-//           res.send(r);
-//         } else {
-//           let data = result.map(function(c){
-//             let city = {
-//               id:c._id,
-//               name:c.name,
-//               geo:c.geo,
-//               value:0
-//             };
-//             let filteredRidings = c.ridings.filter(function(riding){
-//               return riding < end && riding > start;
-//             });
-//             city.value = filteredRidings.length;
-//             return city;
-//           });
-//           data.forEach((da)=>{
-//             db.updateStatistics(da.id,function(err,thing){
-//               if (err) {
-//                 r.success=false;
-//                 r.msg = err;
-//                 res.send(r);
-//               } else {
-//                 r.success = true;
-//                 r.msg = "update the cities result success"
-//                 r.data = da;
-//               }
-//             })
-//           })
-//           r.success = true;
-//           r.msg = "update the cities result success"
-//           res.send(r);
-//         }
-//       })
-//     }
-//   } catch (e) {
-//     res.send(e);
-//   }
-// })
+      var start = req.query.start;
+      var end = req.query.end;
+      db.getAllTripInfo(function(err,result){
+        if (err) {
+          r.success = false;
+          r.msg = err;
+          res.send(r);
+        }else {
+          let trips = [];
+          result.forEach((trip)=>{
+            if (start<trip.arrival_time<end) {
+              trips.push(trip);
+            }
+          })
+          r.success = true;
+          r.msg = "get trips request success";
+          r.data = trips;
+          res.send(r);
+        }
+      })
+    }
+  } catch (e) {
+    res.send(e);
+  }
+})
 
 
 module.exports = router;

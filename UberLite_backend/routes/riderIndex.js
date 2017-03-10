@@ -6,11 +6,8 @@ var sender = new gcm.Sender('AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg');
 var redis = require('redis');
 var client = redis.createClient(6380,'UberLite.redis.cache.windows.net', {auth_pass: '2zdj/rRAD8Uo/9zrSK5BUl9asvLtyU4ZRyIYmlFekb8=', tls: {servername: 'UberLite.redis.cache.windows.net'}});
  // Add your cache name and access key.
- var geo = require('georedis')
- // .initialize(client,{
- //   zset:'mySpecialLocationsSet',
- //   nativeGeo:false
- // });
+ var geo = require('georedis');
+
 var riderStartLocation = geo.addSet('riderStartLocation');
 var driverCurrentLocation = geo.addSet('driverCurrentLocation');
 var db = require('../db/DB.js');
@@ -19,7 +16,7 @@ var nodemailer = require('nodemailer');
 var smtpTransport = require('nodemailer-smtp-transport');
 var sendWarningEmail = require('./sendWarningEmail.js');
 var sendProhibitEmail = require('./sendProhibitEmail.js');
-
+var sendReceiptEmail = require('./sendReceiptEmail.js');
 var fs = require("fs");
 var User = require('../userModel/riderModel'),
     mongoose = require('mongoose'),
@@ -30,7 +27,6 @@ var User = require('../userModel/riderModel'),
 //hash password
 var passwordHash = require('password-hash');
 
-var User = require('../userModel/riderModel');
 var ensureAuthentication = require('./authenticationForRider');
 
 var multer = require("multer");
@@ -57,7 +53,6 @@ Grid.mongo = mongoose.mongo;
 conn.once("open", function(){
   gfs = Grid(conn.db);
   router.get("/", function(req,res){
-
   });
   });
 
@@ -154,14 +149,14 @@ router.post('/riders/:email/registrationInfo', function(req, res) {
 
   try {
     req.checkParams("email", "Enter a valid email address.").notEmpty();
-    req.checkBody("email", "Enter a valid email address.").notEmpty();
+    // req.checkBody("email", "Enter a valid email address.").notEmpty();
     req.checkBody("password", "Enter a valid password.").notEmpty();
     req.checkBody("full_name", "Enter a valid name.").notEmpty();
-    req.checkBody("creditCard_number", "Enter a valid creditCard number.").isCreditCard();
+    req.checkBody("creditCard_number", "Enter a valid creditCard number.").notEmpty();
     req.checkBody("creditCard_name", "Enter a valid creditCard name.").notEmpty();
-    req.checkBody("creditCard_expire", "Enter a valid creditCard expire.").isDate();
-    req.checkBody("age", "Enter a valid age.").isInt();
-    req.checkBody("sex", "Enter a valid sex.").isAlpha();
+    req.checkBody("creditCard_expire", "Enter a valid creditCard expire.").notEmpty();
+    req.checkBody("age", "Enter a valid age.").notEmpty();
+    req.checkBody("phoneNumber","Enter a valid phone number").notEmpty();
 
     var errors = req.validationErrors();
     if (errors) {
@@ -191,14 +186,14 @@ router.post('/riders/:email/registrationInfo', function(req, res) {
       var creditCard_name=req.body.creditCard_name;
       var creditCard_expire=req.body.creditCard_expire;
       var age = req.body.age;
-      var sex = req.body.sex;
-
+      var phone_number = req.body.phone_number;
+      var hashedPassword = passwordHash.generate(password);
       var newUser = new User({
        email: email,
        password: hashedPassword,
        full_name:full_name,
        age:age,
-       sex:sex,
+       phone_number:phone_number,
        creditCard_number:creditCard_number,
        creditCard_name:creditCard_name,
        creditCard_expire:creditCard_expire,
@@ -712,14 +707,8 @@ router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
         rider_email:req.body.rider_email,
         driver_email:req.body.driver_email,
         post_time:req.body.post_time,
-        accepted_time:req.body.accepted_time,
-        pickup_time:req.body.pickup_time,
-        arrival_time:req.body.arrival_time,
         star_location : req.body.star_location,
         end_location : req.body.end_location,
-        estimated_price:req.body.estimated_price,
-        price:req.body.price,
-        score:req.body.score
       };
       db.createUnsuccessfulTrip(trip,function(err,result){
         if (err) {
@@ -741,7 +730,7 @@ router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
 
 
 
-router.post('/tripInfo',ensureAuthenticated,function(req, res){
+router.post('/tripInfo',function(req, res){
   try {
     req.checkBody("rider_email","Enter a valid rider email").notEmpty();
     req.checkBody("driver_email","Enter a valid driver email").notEmpty();
@@ -785,6 +774,16 @@ router.post('/tripInfo',ensureAuthenticated,function(req, res){
           r.success=true;
           r.msg = "payement success";
           r.data = result
+          var re ={};
+          // var startLocation = getStartAddress(trip);
+          // var endLocation = getEndAddress(trip);
+          sendReceiptEmail.sendReceiptEmail(req.body.rider_email,trip,function(err,email){
+            if (err) {
+              re.success=false;
+            }else {
+              re.success = true;
+            }
+          })
         }
         if(callbackCheck >= 4){
           return res.send(r);
@@ -862,7 +861,6 @@ router.post('/tripInfo',ensureAuthenticated,function(req, res){
                     if (err) {
                       re.success=false;
                     }else {
-                      console.log("1111");
                       re.success = true;
                     }
                   })

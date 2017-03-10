@@ -96,9 +96,7 @@ var findPictures= function(db,obj,callback){
 }
 
 var findPictureById = function(db, id, callback){
-  console.log("111111");
   db.collection('fs.files').findOne({_id: mongodb.ObjectId(id)}, function(err,thing){
-      console.log("2222222");
     db.close();
     if(thing){
       callback(null,thing);

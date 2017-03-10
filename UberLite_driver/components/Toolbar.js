@@ -3,9 +3,13 @@ import { PropTypes, Text, View } from 'react-native';
 import { Toolbar as MaterialToolbar } from 'react-native-material-design';
 
 export default class Toolbar extends Component {
-  presFunc(){
-    console.log(this.props);
-    console.log(this.props.navState.routeStack.slice(-1)[0].title);
+  handleIconPress() {
+    if (this.props.show_backspace) {
+      // this.props.updateTitle('Sign In');
+      // alert(1)
+      this.props.navigator.pop();
+      this.props.updateIcon(false);
+    }
   }
 
   render(){
@@ -13,8 +17,8 @@ export default class Toolbar extends Component {
       <MaterialToolbar
           title={this.props.title}
           primary={'paperTeal'}
-          icon={navigator && navigator.isChild ? 'keyboard-backspace' : 'menu'}
-          onIconPress={this.presFunc.bind(this)}
+          icon={this.props.show_backspace ? 'keyboard-backspace' : 'menu'}
+          onIconPress={this.handleIconPress.bind(this)}
           rightIconStyle={{
               margin: 10
           }}

@@ -4,6 +4,7 @@ import { Button, Card, COLOR, PRIMARY_COLORS } from 'react-native-material-desig
 import { MKTextField, MKButton, MKColor, theme, MKSpinner} from 'react-native-material-kit';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import PopupDialog, { DialogButton, ScaleAnimation, SlideAnimation } from 'react-native-popup-dialog';
+import {NORMAL, LARGE, SUV} from './global.js'
 
 var Platform = require('react-native').Platform;
 var ImagePicker = require('react-native-image-picker');
@@ -52,11 +53,18 @@ export default class Registration extends Component{
     password1: null,
     password2: null,
     emailPlaceHolder: 'Email',
+    carType: NORMAL
   };
+
+  componentWillMount() {
+    this.props.updateIcon(true);
+  }
+
 
   navPop(){
     this.props.updateTitle('Sign In');
     this.props.navigator.pop();
+    this.props.updateIcon(false);
   }
 
   onPressBtn(){
@@ -90,11 +98,11 @@ export default class Registration extends Component{
       this.popupDialog.openDialog();
       return;
     }
-    if(!this.state.sex){
-      this.setState({msg: 'Please fill your sex.'});
-      this.popupDialog.openDialog();
-      return;
-    }
+    // if(!this.state.sex){
+    //   this.setState({msg: 'Please fill your sex.'});
+    //   this.popupDialog.openDialog();
+    //   return;
+    // }
     if(!this.state.licence_number){
       this.setState({msg: 'Please fill your licence number.'});
       this.popupDialog.openDialog();
@@ -123,8 +131,9 @@ export default class Registration extends Component{
                   password: this.state.password,
                   full_name: this.state.given_name + ' ' + this.state.last_name,
                   age: this.state.age,
-                  sex: this.state.sex,
+                  // sex: this.state.sex,
                   licence_number: this.state.licence_number,
+                  car_type: this.state.carType
                 };
                 var obj = {
                   url: 'http://ivandembp.intra.uwlax.edu:3000/drivers/' + this.state.email + '/registrationInfo',
@@ -229,8 +238,26 @@ export default class Registration extends Component{
         <TextField placeholder="Last Name" onChangeText={(last_name) => this.setState({last_name})} onFocus={this.checkEmail.bind(this)}/>
         <TextField placeholder="Given Name" onChangeText={(given_name) => this.setState({given_name})} onFocus={this.checkEmail.bind(this)}/>
         <TextField placeholder="Age" onChangeText={(age) => this.setState({age})} onFocus={this.checkEmail.bind(this)}/>
-        <TextField placeholder="Sex" onChangeText={(sex) => this.setState({sex})} onFocus={this.checkEmail.bind(this)}/>
+        {/*<TextField placeholder="Sex" onChangeText={(sex) => this.setState({sex})} onFocus={this.checkEmail.bind(this)}/>*/}
         <TextField placeholder="Licence Number" onChangeText={(licence_number) => this.setState({licence_number})} onFocus={this.checkEmail.bind(this)}/>
+        <Text style={styles.carTypeText}>{'Car Type'}</Text>
+        <View style={styles.carTypeBoard}>
+          <Card style={[styles.carType, this.state.carType === NORMAL ? styles.carTypeBoard_selected : null]} 
+            onPress={() => this.setState({carType: NORMAL})}
+          >
+            <Text>{'Normal'}</Text>
+          </Card>
+          <Card style={[styles.carType, this.state.carType === LARGE ? styles.carTypeBoard_selected : null]} 
+            onPress={() => this.setState({carType: LARGE})}
+          >
+            <Text>{'Large'}</Text>
+          </Card>
+          <Card style={[styles.carType, this.state.carType === SUV ? styles.carTypeBoard_selected : null]} 
+            onPress={() => this.setState({carType: SUV})}
+          >
+            <Text>{'SUV'}</Text>
+          </Card>
+        </View>
         <View style={styles.View_plus}>
           <this.Btn_licence>
             <Icon name="plus" size={18} color="#FFFFFF"/>
@@ -246,6 +273,7 @@ export default class Registration extends Component{
         <View style={styles.loginBtn}>
           <Button text="SIGN UP" primary={'paperTeal'} onPress={this.onPressBtn.bind(this)} raised/>
         </View>
+
         <View style={styles.popupOuterView}>
           <PopupDialog
             width={.7}
@@ -336,6 +364,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
+  },
+  carTypeText: {
+    alignSelf: 'flex-start',
+    marginTop: 15,
+    marginLeft: 19,
+  },
+  carTypeBoard: {
+    flex:1,
+    flexDirection: 'row',
+    marginLeft: 11,
+    marginRight: 11,
+  },
+  carType: {
+    'flex':1,
+    paddingTop: 10,
+    paddingBottom: 10,
+    alignItems: 'center',
+    marginBottom: 0
+  },
+  carTypeBoard_selected: {
+    borderWidth: 1,
+    borderColor: MKColor.Teal
   }
 })
 

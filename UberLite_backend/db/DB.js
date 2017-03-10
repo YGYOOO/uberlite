@@ -19,6 +19,7 @@ module.exports.findOneDriverByEmial = driverDb.driverFindByEmail;
 //to active the driver
 module.exports.updateDriverByEmail = driverDb.driverUpdate;
 module.exports.deleteDriverInTemp = driverDb.TempDriverDeleteByEmail;
+module.exports.updateDriverById = driverDb.driverIdUpdate;
 
 //operations to pictures
 
@@ -64,6 +65,9 @@ module.exports.getPerKMPrice = tripDb.getPriceByKM;
 module.exports.createTrip = tripDb.tripCreate;
 module.exports.paymentRecordCreate = paymentDb.paymentRecordCreate;
 module.exports.createUnsuccessfulTrip = tripDb.untripCreate;
+module.exports.getTripInfoFindById = tripDb.TripInfoFindById;
+module.exports.getAllTripInfo = tripDb.findAllTripInfo;
+
 
 
 //

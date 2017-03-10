@@ -72,6 +72,7 @@ export default class Main extends Component{
                 break;
             }
             if(notification.driverGeo){
+              console.log(notification.driverGeo)
               var driverGeo = JSON.parse(notification.driverGeo);
               this.setState({driverGeo}, this.updateRegion);
               var driverHeading = parseInt(notification.heading);
@@ -648,6 +649,8 @@ export default class Main extends Component{
       <Animatable.View animation="fadeInDown" duration={500}>
         <Card style={styles.infoBoard}>
           <Text>{'Driver ' + this.state.driverInfo.full_name + ' is on the way.'}</Text>
+          <Text>{'Licence Number: ' + this.state.driverInfo.licence_number}</Text>
+          <Text>{'Phone Number: ' + this.state.driverInfo.phone_number}</Text>
         </Card>
       </Animatable.View>
     ) : null;

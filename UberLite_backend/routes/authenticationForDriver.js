@@ -67,10 +67,12 @@ var passport = require('passport')
         if (!passwordHash.verify(req.body.password,user.password)) {
           return done(null, false, { message: 'Incorrect password.' });
         }
+        if (!user.active) {
+          return done(null, false, { message: 'You need to be avtived by admin' });
+        }
         if (user.status=="PROHIBIT") {
           return done(null, false, { message: 'The driver is prohibitive.' });
         }
-        console.log(user);
         return done(null, user);
       });
     }

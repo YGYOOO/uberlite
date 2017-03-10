@@ -130,3 +130,49 @@ module.exports.getPriceByKM = function(per_km_price_type, callback){
     }
   });
 }
+
+var findTripInfoById = function(db, id, callback){
+  db.collection('trip_information').findOne(mongodb.ObjectID(id), function(err,thing){
+    db.close();
+    if(thing){
+      callback(null,thing);
+    }
+    else {
+      callback(null,null);
+    }
+  });
+}
+module.exports.TripInfoFindById = function(id, callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      //call the findDrivers method
+      findTripInfoById(db,id,callback);
+    }
+  });
+}
+
+var findAllTrip = function(db,callback){
+  db.collection('trip_information').find().toArray(function(err,results){
+    db.close();
+    if(results){
+      callback(null,results);
+    }
+    else {
+      callback(err,null);
+    }
+  });
+}
+
+module.exports.findAllTripInfo = function(callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      findAllTrip(db,callback);
+    }
+  });
+}

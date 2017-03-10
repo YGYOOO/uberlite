@@ -95,6 +95,57 @@ module.exports.driverFindById = function(id, callback){
 }
 
 
+
+var updateDriverById = function(db,id,obj,callback){
+  db.collection('driver').update({_id: mongodb.ObjectId(id)}, {$set: obj},function(err,thing){
+    db.close();
+    if(thing){
+      callback(null,thing);
+    }
+    else {
+      callback(null,null);
+    }
+  });
+}
+
+module.exports.driverIdUpdate = function(id,obj, callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      updateDriverById(db,id,obj,callback);
+    }
+  });
+}
+
+//
+// var updateDriverById = function(db, id, obj, callback){
+//   db.collection('driver').update(mongodb.ObjectID(id), {$set: obj}, function(err, result){
+//     db.close();
+//     if(result.result.ok !== 1){
+//       callback(err, null);
+//     }
+//     else{
+//       callback(null, result);
+//     }
+//   });
+// }
+//
+// module.exports.driverIdUpdate = function(id, obj, callback){
+//   mongodb.connect(url,function(err,db){
+//     if(err){
+//       callback(err,null);
+//     }
+//     else {
+//       updateDriverById(db, id, obj, callback);
+//     }
+//   });
+// };
+//
+
+
+
 var updateDriver = function(db, email, obj, callback){
   db.collection('driver').update({email: email}, {$set: obj}, function(err, result){
     db.close();

@@ -6,6 +6,7 @@ const mapAPI =  "https://maps.googleapis.com/maps/api";
 const GOOGLE_API_KEY = 'AIzaSyDZdy8t-8pUwPjntJk45AMyIhn5Q37OOnE';
 const FIREBASE_API_KEY = 'AIzaSyARPJwJHdYb5wjDJkAatuD-4C76CTe9MYg';
 const VIEWING = 'VIEWING', ACCEPTED = 'ACCEPTED', RIDING = 'RIDING', CHECKOUT = 'CHECKOUT';
+const NORMAL = 'normal',  LARGE = 'large', SUV = 'suv';
 const initState = {
   gcm_token: {},
   rider_gcm_token: null, //不为null时会触发sendMyGeo()
@@ -24,6 +25,7 @@ const initState = {
   directionGeos:null,
   riders_old:[],
   riders:[],
+  currentRider: null,
   status: VIEWING,
   show_btn_pickedDriverUp: false,
   show_btn_finished: false,
@@ -34,4 +36,4 @@ const initState = {
 };
 
 export {initState, domain, mapAPI, GOOGLE_API_KEY, FIREBASE_API_KEY,
-  VIEWING, ACCEPTED, RIDING, CHECKOUT};
+  VIEWING, ACCEPTED, RIDING, CHECKOUT, NORMAL, LARGE, SUV};

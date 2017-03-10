@@ -63,3 +63,7 @@
   color:white !important;
   top: 0 !important;
 }
+
+.driver-info [type="checkbox"] + label {
+  transform: translateY(-15px);
+}

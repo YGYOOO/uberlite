@@ -247,10 +247,6 @@ export default class Main extends Component{
           region.longitude = position.coords.longitude;
           this.setState({region});
         }
-
-        if(this.state.rider_gcm_token){
-          this.sendMyGeo(this.state.rider_gcm_token, driverGeo, position.coords.heading);
-        }
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
@@ -285,7 +281,7 @@ export default class Main extends Component{
           riders = riders.concat(newRiders);
           this.setState({riders});
           newRiders.forEach(function(r){
-            this.getRiderInfo(r);
+            this.getRiderInfos(r);
           }.bind(this));
         }
       }.bind(this),
@@ -295,7 +291,7 @@ export default class Main extends Component{
     });
   }
 
-  getRiderInfo(rider){
+  getRiderInfos(rider){
     $f.ajax({
       url: 'http://ivandembp.intra.uwlax.edu:3000/riders/' + rider.key,
       method: 'GET',
@@ -304,6 +300,7 @@ export default class Main extends Component{
         riders.forEach(function(r){
           if(r.key == rider.key){
             r.full_name = result.data.full_name;
+            r.phone_number = result.data.phone_number;
           }
         })
         this.setState({riders: riders});
@@ -367,6 +364,25 @@ export default class Main extends Component{
     });
   }
 
+  checkDistance(A, B, length) {
+    function deg2rad(deg) {
+      return deg * (Math.PI/180)
+    }
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(B.latitude - A.latitude);  
+    var dLon = deg2rad(B.longitude - A.longitude); 
+    var a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(A.latitude)) * Math.cos(deg2rad(B.latitude)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var d = R * c; // Distance in km
+    if(d < length) return true;
+    return false;
+    // alert(JSON.stringify(this.state.currentRider))
+  }
+
   render() {
     let riderRequests = (() => {
       if(this.state.status !== VIEWING) return;
@@ -381,8 +397,15 @@ export default class Main extends Component{
                 }});
                 this.setState({status: ACCEPTED});
                 // setTimeout(() => this.setState({show_btn_pickedDriverUp: true}), 5000);
-                this.setState({show_btn_pickedDriverUp: true});
+                let checkDistanceIntercal = setInterval(() => {
+                  if (this.checkDistance(this.state.currentRider, this.state.driverGeo, 0.2)) {
+                    clearInterval(checkDistanceIntercal);
+                    this.setState({show_btn_pickedDriverUp: true});
+                  }
+                }, 2000);
                 this.setState({  keep_getRiders: false});
+                this.setState({currentRider: rider});
+
                 var body = {
                   email: this.props.profile.email,
                   currentLatitude: this.state.driverGeo.latitude,
@@ -451,7 +474,14 @@ export default class Main extends Component{
               this.setState({status: RIDING});
               this.setState({show_btn_pickedDriverUp: false});
               // setTimeout(() => this.setState({show_btn_finished: true}), 5000);
-              this.setState({show_btn_finished: true})
+              //this.setState({show_btn_finished: true});
+              let checkDistanceIntercal = setInterval(() => {
+                  if (this.checkDistance(this.state.endLocation, this.state.driverGeo, 0.2)) {
+                    clearInterval(checkDistanceIntercal);
+                    this.setState({show_btn_finished: true});
+                  }
+                }, 2000);
+              this.setState({currentRider: null});
               this.getDirection(this.state.startLocation, this.state.endLocation);
               $f.gcm({
                 key: FIREBASE_API_KEY,
@@ -474,7 +504,7 @@ export default class Main extends Component{
 
     const btn_finished = this.state.show_btn_finished ? (
       <Animatable.View animation="bounceInDown" duration={500}>
-        <View style={styles.btn_pickedDriverUp}>
+        <View style={styles.btn_finished}>
           <Button text="FINISH TRIP" primary={themeColor}
             onPress={() => {
               this.setState({status: CHECKOUT});
@@ -511,6 +541,15 @@ export default class Main extends Component{
       </Animated.View>
     ) : null;
 
+    const riderInfoBoard = this.state.currentRider ? (
+      <Animatable.View animation="fadeInDown" duration={500}>
+        <Card style={styles.infoBoard}>
+          <Text>{'Name: ' + this.state.currentRider.full_name}</Text>
+          <Text>{'Phone Number: ' + this.state.currentRider.phone_number}</Text>
+        </Card>
+      </Animatable.View>
+    ) : null;
+
     return (
       <View style ={styles.container}>
         <MapView
@@ -529,8 +568,11 @@ export default class Main extends Component{
             {riderRequests}
           </ScrollView>
         </View>
-        {btn_pickedDriverUp}
-        {btn_finished}
+        <View style={styles.info}>
+          {riderInfoBoard}
+          {btn_pickedDriverUp}
+          {btn_finished}
+        </View>
         {paySuccesBoard}
       </View>
     );
@@ -564,6 +606,22 @@ const styles = StyleSheet.create({
     marginBottom: 0
   },
   btn_pickedDriverUp: {
+    width: windowD.width * .9
+  },
+  btn_finished: {
+    width: windowD.width * .9,
+    marginTop: 30
+  },
+  info: {
+    position: 'absolute',
+    top: 41,
+    alignItems: 'center',
+    width: windowD.width
+  },
+  infoBoard: {
+    alignItems: 'center',
+    padding: 10,
+    paddingTop: 20,
     width: windowD.width * .9
   },
   paySuccesBoard: {

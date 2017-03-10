@@ -23,7 +23,8 @@ var User = require('../userModel/driverModel'),
     mongoose = require('mongoose'),
     bcrypt = require('bcryptjs'),
     nev = require('email-verification')(mongoose);
-mongoose.connect('mongodb://xuchaohui:Xu111111@ds046939.mlab.com:46939/myuberlite');
+    mongoose.Promise = global.Promise;
+    mongoose.connect('mongodb://xuchaohui:Xu111111@ds046939.mlab.com:46939/myuberlite');
 
 //hash password
 var passwordHash = require('password-hash');
@@ -60,7 +61,7 @@ conn.once("open", function(){
 
 nev.configure({
   persistentUserModel: User,
-  expirationTime: 600000, // 10 minutes
+  expirationTime: 6000000, // 100 minutes
   tempUserModel:null,
   emailFieldName: 'email',
   tempUserCollection: 'temporary_drivers',
@@ -236,16 +237,16 @@ router.post('/drivers/:email/licenceShot', upload.single('driverLicenceShot'), f
 
 //
 router.post('/drivers/:email/registrationInfo', function(req, res) {
-
   try {
     req.checkParams("email", "Enter a valid email address.").notEmpty();
     req.checkBody("password", "Enter a valid password.").notEmpty();
     req.checkBody("full_name", "Enter a valid name.").notEmpty();
-    req.checkBody("licence_number", "Enter a valid creditCard number.").isAlphanumeric();
-    req.checkBody("creditCard_name", "Enter a valid creditCard name.").notEmpty();
+    req.checkBody("licence", "Enter a valid licence number.").notEmpty();
+    // req.checkBody("creditCard_name", "Enter a valid creditCard name.").notEmpty();
     req.checkBody("age", "Enter a valid age.").isInt();
-    req.checkBody("sex", "Enter a valid sex.").isAlpha();
+    // req.checkBody("sex", "Enter a valid sex.").isAlpha();
     req.checkBody("car_type","Enter a valid car type").notEmpty();
+    req.checkBody("phone","Enter a valid phone number").notEmpty();
     var errors = req.validationErrors();
     if (errors) {
       var re = {};
@@ -254,7 +255,6 @@ router.post('/drivers/:email/registrationInfo', function(req, res) {
       return res.send(re);
     } else {
       // normal processing here
-
     var email = req.params.email;
     //get picture
     var driverP = {};
@@ -291,26 +291,30 @@ router.post('/drivers/:email/registrationInfo', function(req, res) {
         var password = req.body.password;
         var hashedPassword = passwordHash.generate(password);
         var full_name = req.body.full_name;
-        var licence_number = req.body.licence_number;
+        var licence = req.body.licence;
         var age = req.body.age;
-        var sex = req.body.sex;
+        // var sex = req.body.sex;
         var car_type = req.body.car_type;
         var score=5;
+        var phone = req.body.phone;
+        var age = req.body.age;
+        var sex = req.body.sex;
         var newUser = new User({
          email: email,
          password: hashedPassword,
          full_name:full_name,
+         licence:licence,
          age:age,
          sex:sex,
+         phone:phone,
          score:score,
-         licence_number:licence_number,
+         status:"NORMAL",
          active:false,
          authorized:false,
-         status:"NORMAL",
-         car_type:car_type,
          driver_picture:driver_p_id,
          car_picture:car_p_id,
-         licence_picture:licence_p_id
+         car_type:car_type,
+         licence_picture:licence_p_id,
         });
 
         nev.createTempUser(newUser, function(err, existingPersistentUser, newTempUser) {
@@ -493,7 +497,8 @@ router.get('/riders/:email',ensureAuthenticated,function(req,res){
         }
         else {
           r.data = {
-            full_name: thing.full_name
+            full_name: thing.full_name,
+            phone_number: thing.phone_number
           };
           r.success = true;
           res.status(200);
@@ -545,7 +550,14 @@ router.get('/geo/riders',ensureAuthenticated,function(req,res){
         }
         reply.forEach(function(rider) {
           client.get("ridingRequest:"+rider.key, function(err,ridingRequest){
+            if (!ridingRequest) {
+              let re = {};
+              re.success=false;
+              return res.send(re);
+            }
+
             ridingRequest = JSON.parse(ridingRequest);
+
             if(ridingRequest.status == WATING && ridingRequest.car_type == car_type){
               ridingRequests.push(rider);
             }

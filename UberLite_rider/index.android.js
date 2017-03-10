@@ -25,7 +25,8 @@
 export default class UberLite_rider extends Component {
   state = {
     title: 'Sign In',
-    email: ''
+    email: '',
+    show_backspace: false,
   }
 
   updateTitle(title){
@@ -36,12 +37,17 @@ export default class UberLite_rider extends Component {
     this.setState({email});
   }
 
+  updateIcon(show_backspace) {
+    this.setState({show_backspace});
+  }
+  
+
   navigatorRenderScene(route, navigator) {
     switch(route.title) {
       case 'Login':
-        return (<Login navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateEmail={this.updateEmail.bind(this)}/>);
+        return (<Login navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateIcon={this.updateIcon.bind(this)} updateEmail={this.updateEmail.bind(this)}/>);
       case 'Registration':
-        return (<Registration navigator={navigator} updateTitle={this.updateTitle.bind(this)}/>);
+        return (<Registration navigator={navigator} updateTitle={this.updateTitle.bind(this)} updateIcon={this.updateIcon.bind(this)}/>);
       case 'Main':
         return (<Main navigator={navigator} updateTitle={this.updateTitle.bind(this)} email={this.state.email}/>);
       case 'Test':
@@ -53,8 +59,8 @@ export default class UberLite_rider extends Component {
     return (
       <Navigator
         navigationBar={
-          <Toolbar title={this.state.title}/>
-          }
+          <Toolbar title={this.state.title} show_backspace={this.state.show_backspace} updateIcon={this.updateIcon.bind(this)}/>
+        }
         initialRoute={{title: 'Login'}}
         renderScene={this.navigatorRenderScene.bind(this)}
         configureScene={(route) => {

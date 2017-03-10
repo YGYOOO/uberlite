@@ -5,13 +5,14 @@ var riderSchema = mongoose.Schema({
   email:String,
   password:String,
   full_name:String,
-  age:String,
-  sex:String,
   phone:String,
   creditCard_number:String,
   creditCard_name:String,
   creditCard_expire:String,
-  authorized:Boolean,
+  authorized:Boolean ,
+
+  //  age:String,
+  //   sex:String,
 });
 
 riderSchema.methods.validPassword = function(password){
