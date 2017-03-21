@@ -44,10 +44,10 @@ function fillDriverInfo(driver, $ele){
     $('.approve').css('display', 'block');
   }
   if (driver.active) {
-    $('.driver-info .checkbox').html('<input type="checkbox" checked="checked"/><label>Active</label>');
+    $('.driver-info .checkbox').eq(0).html('<input type="checkbox" checked="checked"/><label>Active</label>');
   }
   if (driver.authorized) {
-    $('.driver-info .checkbox').html('<input type="checkbox" checked="checked"/><label>Authorized</label>');
+    $('.driver-info .checkbox').eq(1).html('<input type="checkbox" checked="checked"/><label>Authorized</label>');
   }
 }
 
@@ -207,11 +207,37 @@ function listTripInfos(data, $ele) {
   $ele.html('');
 
   var content = data.map(function(info) {
+    var location = info.star_location.latitude.toFixed(3) + ', ' + info.star_location.longitude.toFixed(3);
     return  '<tr><td>'+ info.driver_email + '</td>' +
       '<td>' + info.rider_email + '</td>' +
-      '<td>' + new Date(info.arrival_time) + '</td>' +
+      '<td>' + new Date(info.post_time) + '</td>' +
+      '<td>' + location + '</td>' +
       '<td>' + info.price + '</td>' +
       '<td>'+ info.score + '</td></tr>';
+  });
+  $ele.html(content.join(''));
+}
+
+function getCanceledTripInfos($ele) {
+  $.ajax({
+    url: "/canceledTripInfo",
+    method: "GET",
+  }).done(function(result){
+    listCanceledTripInfos(result.data, $ele);
+  }).fail(function(result){
+
+  });
+}
+
+function listCanceledTripInfos(data, $ele) {
+  $ele.html('');
+
+  var content = data.map(function(info) {
+    var location = info.star_location.latitude.toFixed(3) + ', ' + info.star_location.longitude.toFixed(3);
+    return '<tr><td>' + info.rider_email + '</td>' +
+      '<td>' + new Date(info.post_time) + '</td>' +
+      '<td>' + location + '</td>' +
+      '<td>' + info.estimated_price + '</td></tr>';
   });
   $ele.html(content.join(''));
 }

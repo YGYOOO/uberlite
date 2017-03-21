@@ -238,12 +238,6 @@ router.get('/riders',ensureAuthenticated, function(req, res, next) {
 router.get('/rider/:id',ensureAuthenticated, function(req, res, next) {
   try {
     req.checkParams("id","Enter a valid id").notEmpty();
-    req.checkBody("email","Enter a valid email").notEmpty();
-    req.checkBody("id","Enter a valid id").notEmpty();
-    req.checkBody("id","Enter a valid id").notEmpty();
-    req.checkBody("id","Enter a valid id").notEmpty();
-    req.checkBody("id","Enter a valid id").notEmpty();
-    req.checkBody("id","Enter a valid id").notEmpty();
     var errors = req.validationErrors();
     if (errors) {
       var re = {};
@@ -345,7 +339,7 @@ router.get('/statistics/ridingsAmount',ensureAuthenticated,function(req,res,next
 
 
 
-router.delete('/statistics/ridingsAmount',function(req,res,next){
+router.delete('/statistics/ridingsAmount',ensureAuthenticated,function(req,res,next){
   try {
     req.checkQuery("start","Enter a valid start").notEmpty();
     req.checkQuery("end","Enter a valid end").notEmpty();
@@ -393,7 +387,7 @@ router.delete('/statistics/ridingsAmount',function(req,res,next){
 })
 
 //to update all ridings to []
-router.put('/ridings',function(req,res,next){
+router.put('/ridings',ensureAuthenticated,function(req,res,next){
   var r={};
   db.getAllStatistics(function(err,result){
     if (err) {
@@ -420,7 +414,7 @@ router.put('/ridings',function(req,res,next){
   })
 })
 
-router.put('/statistics/ridings',function(req,res,next){
+router.put('/statistics/ridings',ensureAuthenticated,function(req,res,next){
   try {
     req.checkBody("max","Enter a valid start").notEmpty();
     req.checkBody("min","Enter a valid end").notEmpty();
@@ -499,7 +493,7 @@ router.put('/statistics/ridings',function(req,res,next){
   }
 })
 
-router.get('/tripInfo/:id',function(req,res,next){
+router.get('/tripInfo/:id',ensureAuthenticated,function(req,res,next){
   var r = {};
   try {
     req.checkParams("id","Enter a valid id").notEmpty();
@@ -528,7 +522,7 @@ router.get('/tripInfo/:id',function(req,res,next){
   }
 })
 
-router.get('/tripInfo',function(req,res,next){
+router.get('/tripInfo',ensureAuthenticated,function(req,res,next){
   try {
     req.checkQuery("start","Enter a valid start").notEmpty();
     req.checkQuery("end","Enter a valid end").notEmpty();
@@ -540,7 +534,6 @@ router.get('/tripInfo',function(req,res,next){
       return res.send(re);
     } else{
       var r = {};
-
       var start = req.query.start;
       var end = req.query.end;
       db.getAllTripInfo(function(err,result){
@@ -567,5 +560,53 @@ router.get('/tripInfo',function(req,res,next){
   }
 })
 
+router.get('/canceledTripInfo',ensureAuthenticated,function(req, res, next){
+  try {
+    var r = {};
+    db.findAllCanceledTrip(function(err,result){
+      if (err) {
+        r.success = false;
+        r.msg = err;
+        res.send(r);
+      } else {
+        r.success = true;
+        r.msg = "get all canceled trip info";
+        r.data = result;
+        res.send(r);
+      }
+    })
+  } catch (e) {
+    res.send(e);
+  }
+})
+
+router.get('/canceledTripInfo/:id',ensureAuthenticated,function(req,res,next){
+  var r = {};
+  try {
+    req.checkParams("id","Enter a valid id").notEmpty();
+    var errors = req.validationErrors();
+    if (errors) {
+      var re = {};
+      re.success = false;
+      re.error= errors;
+      return res.send(re);
+    } else{
+      db.getCanceledTripInfoFindById(req.params.id,function(err,result){
+        if (err) {
+          r.success = false;
+          r.msg = err;
+          res.send(r);
+        }else {
+          r.success = true;
+          r.msg = "Get Trip by id success";
+          r.data = result;
+          res.send(r);
+        }
+      })
+    }
+  } catch (e) {
+    res.send(e);
+  }
+})
 
 module.exports = router;

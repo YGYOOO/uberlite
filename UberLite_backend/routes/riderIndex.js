@@ -648,53 +648,13 @@ router.post('/ridingRecords',ensureAuthentication,function(req,res){
   }
 })
 
-
-//add ensureAuthentication,this is for testing
-router.delete('/ridingRequest/:email',ensureAuthenticated,function(req,res,next){
-  try {
-    req.checkParams("email","Enter a valid email").notEmpty();
-    var errors = req.validationErrors();
-    if (errors) {
-      var re = {};
-      re.success = false;
-      re.error= errors;
-      return res.send(re);
-    } else {
-      var r = {};
-      client.del("ridingRequest:"+req.params.email,function(err,reply){
-        if (err) {
-          r.success=false;
-          r.msg= err;
-          return res.send(r);
-        }
-        else {
-          r.success=true;
-          r.msg= "delete this ridingRequest success";
-          r.data= reply;
-          return res.send(r);
-        }
-      })
-    }
-  } catch (e) {
-    res.send(e);
-  }
-})
-
-
-
 router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
   try {
     req.checkBody("rider_email","Enter a valid rider email").notEmpty();
-    req.checkBody("driver_email","Enter a valid driver email").notEmpty();
     req.checkBody("post_time","Enter a valid post time").notEmpty();
-    req.checkBody("accepted_time","Enter a valid accepted time").notEmpty();
-    req.checkBody("pickup_time","Enter a valid pickup time").notEmpty();
-    req.checkBody("arrival_time","Enter a valid arrival time").notEmpty();
     req.checkBody("star_location","Enter a valid star location").notEmpty();
     req.checkBody("end_location","Enter a valid end location").notEmpty();
     req.checkBody("estimated_price","Enter a valid estimated price").notEmpty();
-    req.checkBody("price","Enter a valid price").notEmpty();
-    req.checkBody("score","Enter a valid score").notEmpty();
     var errors = req.validationErrors();
     if (errors) {
       var re = {};
@@ -705,10 +665,10 @@ router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
       var r = {};
       var trip = {
         rider_email:req.body.rider_email,
-        driver_email:req.body.driver_email,
         post_time:req.body.post_time,
         star_location : req.body.star_location,
         end_location : req.body.end_location,
+          estimated_price:req.body.estimated_price
       };
       db.createUnsuccessfulTrip(trip,function(err,result){
         if (err) {
@@ -716,10 +676,27 @@ router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
           r.msg = err;
           return res.send(r);
         }else {
-          r.success = true;
-          r.msg = "save this unsuccessful trip information";
-          r.data = result;
-          return res.send(r);
+          client.del("ridingRequest:"+req.body.rider_email,function(err,reply){
+            if (err) {
+              r.success=false;
+              r.msg= err;
+              return res.send(r);
+            }
+            else {
+              riderStartLocation.removeLocation(req.body.rider_email,function(err,result){
+                if (err) {
+                  r.success=false;
+                  r.msg= err;
+                  return res.send(r);
+                } else {
+                  r.success=true;
+                  r.msg= "delete this ridingRequest success and save this unsuccessful trip information";
+                  r.data= reply;
+                  return res.send(r);
+                }
+              })
+            }
+          })
         }
       })
     }
@@ -728,9 +705,7 @@ router.post('/failedTripInfo',ensureAuthenticated,function(req,res,next){
   }
 })
 
-
-
-router.post('/tripInfo',function(req, res){
+router.post('/tripInfo',ensureAuthenticated,function(req, res ,next){
   try {
     req.checkBody("rider_email","Enter a valid rider email").notEmpty();
     req.checkBody("driver_email","Enter a valid driver email").notEmpty();
@@ -1042,19 +1017,6 @@ router.post('/tripInfo',function(req, res){
   }
 })
 
-
-// router.post('/warningEmail',function(req,res){
-//   var r={};
-//   sendProhibitEmail.sendProhibitEmail(req.body.email,function(err,result){
-//     if (err) {
-//       r.success=false;
-//       return res.send(r);
-//     }else {
-//       r.success = true;
-//       return res.send(r);
-//     }
-//   })
-// })
 
   function ensureAuthenticated(req, res, next) {
     var r = {};

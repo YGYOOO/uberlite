@@ -260,6 +260,22 @@ export default class Main extends Component{
       '&car_type=' + this.props.profile.car_type,
       method: 'GET',
       success: function(result){
+        if (!result.data) return; 
+        // var changed = false;
+        // if (result.data.length !== this.state.riders.length) changed = true;
+        // else {
+        //   var riders = this.state.riders;
+        //   changed = result.data.some(function(r1) {
+        //     return riders.some(function(r2) {
+        //       if (r1.key == r2.key) return true;
+        //       else return false;
+        //     });
+        //   });
+        // }
+        // if (changed) {
+        //   this.setState({riders: result.data});
+        // }
+
         let riders = this.state.riders.slice().filter(function(r1){
           let finded = false;
           result.data.forEach(function(r2){
@@ -271,13 +287,12 @@ export default class Main extends Component{
         let newRiders = result.data.filter(function(r1){
           let finded = false;
           riders.forEach(function(r2){
-            // alert(r1.key + ' ' + r2.key)
             if(r1.key == r2.key) finded = true;
           });
-          // alert(finded);
           return !finded;
         });
-        if(newRiders.length > 0){
+
+        if(newRiders.length > 0 || riders.length !== this.state.riders.length){
           riders = riders.concat(newRiders);
           this.setState({riders});
           newRiders.forEach(function(r){

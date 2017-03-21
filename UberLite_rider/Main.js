@@ -1,5 +1,5 @@
 import React, { Component, PropTypes } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated, AsyncStorage } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated, AsyncStorage,TouchableHighlight, Image } from 'react-native';
 import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-material-design';
 import MapView from 'react-native-maps';
 import PlacesAutocomplete from './components/PlacesAutocomplete';
@@ -134,7 +134,6 @@ export default class Main extends Component{
   componentDidUpdate(){
     this.storeStateDebounce();
   }
-  
 
   storeState(){
     try {
@@ -303,6 +302,9 @@ export default class Main extends Component{
     this.setState({show_searcher_startingPoint: false});
     this.setState({show_searcher_destination: false});
     this.setState({show_btn_askCar: false});
+    this.askCancelInterval = setInterval(() => {
+      this.setState({show_cancelBoard: true});
+    }, 1000 * 60 * .2);
 
     var body = {
       startLocation: {
@@ -565,6 +567,34 @@ export default class Main extends Component{
     this.setState({estimatedPrice: '...'});
   }
 
+  cancelRequest() {
+    $f.ajax({
+      url: domain + '/failedTripInfo',
+      method: 'POST',
+      body: trip_info,
+      success: (result) => {
+        console.log(result);
+        if(result.success){
+          this.props.navigator.pop();
+          AsyncStorage.removeItem('@uberLiteRider:state')
+        }
+        else{
+          alert('Sending request failed, please check your network');
+          this.navLogin();
+        }
+      },
+      error: (err) => {
+        console.err(err);
+        alert('Sending request failed, please check your network');
+        this.navLogin();
+      }
+    });
+  }
+
+  showMore() {
+    this.setState({show_carPicture: !this.state.show_carPicture});
+  }
+
   render() {
     const searcher_startingPoint = this.state.show_searcher_startingPoint ? (
       <Card>
@@ -647,10 +677,21 @@ export default class Main extends Component{
 
     const driverBoard = (this.state.show_driverBoard && this.state.driverInfo)  ? (
       <Animatable.View animation="fadeInDown" duration={500}>
-        <Card style={styles.infoBoard}>
+        <Card style={[styles.infoBoard, {paddingBottom: 3}]}>
           <Text>{'Driver ' + this.state.driverInfo.full_name + ' is on the way.'}</Text>
           <Text>{'Licence Number: ' + this.state.driverInfo.licence_number}</Text>
           <Text>{'Phone Number: ' + this.state.driverInfo.phone_number}</Text>
+          <TouchableHighlight underlayColor={'mintcream'} onPress={this.showMore.bind(this)}>
+            <Text style={styles.showMoreText}>
+              {this.state.show_carPicture ? 'hide' : 'show car picture'}
+            </Text>
+          </TouchableHighlight>
+          {
+            this.state.show_carPicture ? (
+              <Image source={{uri: domain + '/img/' + this.state.driverInfo.car_picture}}
+          style={{width: 300, height: 300}} />
+            ) : null
+          }
         </Card>
       </Animatable.View>
     ) : null;
@@ -712,6 +753,14 @@ export default class Main extends Component{
       </Animated.View>
     ) : null;
 
+    const cancelBoard = this.state.show_watingSpinner ? (
+      <View style={styles.cancel}>
+        <TouchableHighlight onPress={this.cancelRequest.bind(this)}>
+          <Text style={styles.cancelText} >{'cancel'}</Text>
+        </TouchableHighlight>
+      </View>
+    ) : null;
+
     return (
       <View style ={styles.container}>
         <MapView
@@ -756,6 +805,7 @@ export default class Main extends Component{
         {watingSpinner}
         {checkoutBoard}
         {thanksBoard}
+        {cancelBoard}
       </View>
     );
   }
@@ -863,5 +913,23 @@ const styles = StyleSheet.create({
     height: 100,
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  cancel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelText: {
+    color: 'white',
+    margin: 3,
+  },
+  showMoreText: {
+    fontSize: 11,
+    margin: 5,
+    marginTop: 3,
+    marginBottom: 0,
   }
 });

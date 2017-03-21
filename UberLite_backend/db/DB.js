@@ -67,6 +67,8 @@ module.exports.paymentRecordCreate = paymentDb.paymentRecordCreate;
 module.exports.createUnsuccessfulTrip = tripDb.untripCreate;
 module.exports.getTripInfoFindById = tripDb.TripInfoFindById;
 module.exports.getAllTripInfo = tripDb.findAllTripInfo;
+module.exports.getCanceledTripInfoFindById = tripDb.getCanceledTripInfoFindById;
+module.exports.findAllCanceledTrip = tripDb.findAllCanceledTrip;
 
 
 

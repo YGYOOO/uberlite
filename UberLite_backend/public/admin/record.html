@@ -17,6 +17,12 @@
         <li class="active"><a href="/management/record">Record</a></li>
         <li><a href="/management/statistics">Statistics</a></li>
       </ul>
+      <div class="input-field selector-time">
+        <select>
+          <option value="0">Finished Trips</option>
+          <option value="1">Canceled Trips</option>
+        </select>
+      </div>
     </div>
   </nav>
   <div class="user-table card-panel grey lighten-5">
@@ -25,9 +31,16 @@
         <tr>
           <th>Driver Email</th>
           <th>Rider Email</th>
-          <th>Arrival Time</th>
+          <th>Post Time</th>
+          <th>Location</th>
           <th>Price</th>
           <th>Score</th>
+        </tr>
+        <tr class="hidden">
+          <th>Rider Email</th>
+          <th>Post Time</th>
+          <th>Location</th>
+          <th>Estimated Price</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -39,6 +52,12 @@
   <script>
     $(document).ready(function() {
       getTripInfos($('.user-table tbody'));
+    });
+
+    $('select').on('change', function(e) {
+      $('.user-table thead>tr').toggleClass('hidden');
+      if ($(this).val() === 0) getTripInfos($('.user-table tbody'));
+      else getCanceledTripInfos($('.user-table tbody'));
     });
   </script>
 </body>

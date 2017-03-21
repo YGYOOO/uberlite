@@ -67,3 +67,7 @@
 .driver-info [type="checkbox"] + label {
   transform: translateY(-15px);
 }
+
+.hidden {
+  display: none;
+}

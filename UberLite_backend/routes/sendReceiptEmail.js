@@ -39,10 +39,10 @@ module.exports.sendReceiptEmail=function toSendProhibitEmail(email,tripInfo,call
                   from: 'LiteUber<user@gmail.com>',
                   subject: 'Receipt',
                   to:email,
-                  html: '<h1 align="center">LiteUber </h1><h2 align="center">Receipt</h2><br /><br />'+
+                  html: '<h1 align="center">UberLite </h1><h2 align="center">Receipt</h2><br /><br />'+
                   '<p>Dear rider:<br />Here is your trip receipt</p>'+'<br /><p>Amount :$'+tripInfo.price
                   +'</p>'+'<br /><p>Date :'+date+'</p>'
-                  +'<br /><p>Trip detail,<br />Start time:'+startTime+'End time'+date +'<br />From '+s.streetNumber+" "+s.streetName+' '+s.city+' To '+e.streetNumber+' '+e.streetName+' '+e.city+'</p>',
+                  +'<br /><p>Trip detail,<br />Start time:'+startTime+'End time: '+date +'<br />From '+s.streetNumber+" "+s.streetName+'  '+s.city+'  To  '+e.streetNumber+' '+e.streetName+'  '+e.city+'</p>',
                   text: 'Please verify your account by clicking the following link, or by copying and pasting it into your browser'
                 }
                   transport.sendMail(receiptMailOptions, function(error,response) {

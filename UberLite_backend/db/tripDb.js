@@ -3,8 +3,6 @@ var url = "mongodb://xuchaohui:Xu111111@ds046939.mlab.com:46939/myuberlite";
 
 //create a user
 var createTrip = function(db, objTrip, callback){
-  db.collection('trip_information').findOne(mongodb.ObjectID(objTrip.id), function(err, thing){
-    if(!thing){
       db.collection('trip_information').insertOne(objTrip, function(err, writeResult){
         if(writeResult.result.ok !== 1){
           callback(err, null);
@@ -13,11 +11,6 @@ var createTrip = function(db, objTrip, callback){
           callback(null, writeResult);
         }
       });
-    }
-    else {
-      callback(null, null);
-    }
-  });
 }
 
 
@@ -43,19 +36,12 @@ module.exports.tripCreate = function(obj,callback){
 
 
 var createUnsuccessfulTrip = function(db, objTrip, callback){
-  db.collection('unsuccessful_trip_information').findOne(mongodb.ObjectID(id), function(err, thing){
-    if(!thing){
-      db.collection('unsuccessful_trip_information').insertOne(objTrip, function(err, writeResult){
-        if(writeResult.result.ok !== 1){
-          callback(err, null);
-        }
-        else{
-          callback(null, writeResult);
-        }
-      });
+  db.collection('unsuccessful_trip_information').insertOne(objTrip, function(err, writeResult){
+    if(writeResult.result.ok !== 1){
+      callback(err, null);
     }
-    else {
-      callback(null, null);
+    else{
+      callback(null, writeResult);
     }
   });
 }
@@ -80,6 +66,8 @@ module.exports.untripCreate = function(obj,callback){
     }
   });
 }
+
+
 
 
 var getPriceByDay = function(db, day, callback){
@@ -173,6 +161,78 @@ module.exports.findAllTripInfo = function(callback){
     }
     else {
       findAllTrip(db,callback);
+    }
+  });
+}
+
+
+
+var findTripInfoById = function(db, id, callback){
+  db.collection('trip_information').findOne(mongodb.ObjectID(id), function(err,thing){
+    db.close();
+    if(thing){
+      callback(null,thing);
+    }
+    else {
+      callback(null,null);
+    }
+  });
+}
+module.exports.TripInfoFindById = function(id, callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      //call the findDrivers method
+      findTripInfoById(db,id,callback);
+    }
+  });
+}
+
+var findAllCanceledTrip = function(db,callback){
+  db.collection('unsuccessful_trip_information').find().toArray(function(err,results){
+    db.close();
+    if(results){
+      callback(null,results);
+    }
+    else {
+      callback(err,null);
+    }
+  });
+}
+
+module.exports.findAllCanceledTrip = function(callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      findAllCanceledTrip(db,callback);
+    }
+  });
+}
+
+
+var findCanceledTripInfoById = function(db, id, callback){
+  db.collection('unsuccessful_trip_information').findOne(mongodb.ObjectID(id), function(err,thing){
+    db.close();
+    if(thing){
+      callback(null,thing);
+    }
+    else {
+      callback(null,null);
+    }
+  });
+}
+module.exports.getCanceledTripInfoFindById = function(id, callback){
+  mongodb.connect(url,function(err,db){
+    if(err){
+      callback(err,null);
+    }
+    else {
+      //call the findDrivers method
+      findCanceledTripInfoById(db,id,callback);
     }
   });
 }
