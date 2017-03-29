@@ -241,12 +241,10 @@ export default class Main extends Component{
           this.sendMyGeo(this.state.rider_gcm_token, driverGeo, position.coords.heading);
         }
 
-        if(this.state.status === ACCEPTED || this.state.status === RIDING){
-          var region = JSON.parse(JSON.stringify(this.state.region));
-          region.latitude = position.coords.latitude;
-          region.longitude = position.coords.longitude;
-          this.setState({region});
-        }
+        var region = JSON.parse(JSON.stringify(this.state.region));
+        region.latitude = position.coords.latitude;
+        region.longitude = position.coords.longitude;
+        this.setState({region});
       },
       (error) => alert(JSON.stringify(error)),
       {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}

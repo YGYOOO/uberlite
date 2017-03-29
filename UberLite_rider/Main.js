@@ -679,7 +679,6 @@ export default class Main extends Component{
       <Animatable.View animation="fadeInDown" duration={500}>
         <Card style={[styles.infoBoard, {paddingBottom: 3}]}>
           <Text>{'Driver ' + this.state.driverInfo.full_name + ' is on the way.'}</Text>
-          <Text>{'Licence Number: ' + this.state.driverInfo.licence_number}</Text>
           <Text>{'Phone Number: ' + this.state.driverInfo.phone_number}</Text>
           <TouchableHighlight underlayColor={'mintcream'} onPress={this.showMore.bind(this)}>
             <Text style={styles.showMoreText}>

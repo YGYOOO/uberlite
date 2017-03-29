@@ -14,34 +14,24 @@ export default class PlacesAutocomplete extends Component {
         placeholder={this.props.placeholder}
         minLength={2}
         autoFocus={false}
-        // getDefaultValue={() => {
-        //   return this.props.value;
-        // }}
-        // updateValue={this.props.updateValue}
         value={this.props.value}
         onPress={(data) => {
-          let url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query=' + data.description.split('#').join(' ') + '&key=' + GOOGLE_API_KEY;
-          console.log(url);
+          let url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query=' 
+          + data.description.split('#').join(' ') + '&key=' + GOOGLE_API_KEY;
           $f.ajax({
             url: url,
             method: 'GET',
             success: (result) => {
               this.props.callback(result);
-              // var region = JSON.parse(JSON.stringify(this.state.region));
-              // region.latitude = result.results[0].geometry.location.lat;
-              // region.longitude = result.results[0].geometry.location.lng;
-              // this.setState({region});
             },
             error: function(err){
               console.err(err);
             }
           });
-          // alert(JSON.stringify(data));
         }}
         query={{
           key: GOOGLE_API_KEY,
-          language: 'en', // language of the results
-          // types: 'geocode', // default: 'geocode'
+          language: 'en',
         }}
         styles={{
           listView:{

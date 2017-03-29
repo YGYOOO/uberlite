@@ -8,23 +8,25 @@ let cities = [{"name":"New York","geo":[-73.9385,40.6643],"ridings":[14870101519
 
 function init(){
   cities.every((city, index) => {
-  city.riding = city.ridings[0];
+  city.riding = new Date().getTime() - 1000 * 3600 * 13;
   delete city.ridings;
   // city.geo = JSON.stringify(city.geo);
-  if(index > 3) return false;
-  $.ajax({
-    url: '/statistics/ridingsAmount/',
-    method: 'POST',
-    data: JSON.stringify(city),
-    dataType: 'json',
-    contentType: "application/json; charset=utf-8",
-    success: (result) => {
-      console.log(result);
-    },
-    error: () => {
+  if (index > 100) return false;
+  if (Math.random() > .5) {
+    $.ajax({
+      url: '/statistics/ridingsAmount/',
+      method: 'POST',
+      data: JSON.stringify(city),
+      dataType: 'json',
+      contentType: "application/json; charset=utf-8",
+      success: (result) => {
+        console.log(result);
+      },
+      error: () => {
 
-    }
-  });
+      }
+    });
+  }
 
   return true
 });

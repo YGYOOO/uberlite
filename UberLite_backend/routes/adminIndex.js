@@ -414,7 +414,7 @@ router.put('/ridings',ensureAuthenticated,function(req,res,next){
   })
 })
 
-router.put('/statistics/ridings',ensureAuthenticated,function(req,res,next){
+router.put('/statistics/ridings',function(req,res,next){
   try {
     req.checkBody("max","Enter a valid start").notEmpty();
     req.checkBody("min","Enter a valid end").notEmpty();
@@ -432,31 +432,31 @@ router.put('/statistics/ridings',ensureAuthenticated,function(req,res,next){
       var riding = req.body.riding;
       var city = req.body.city||null;
       if (city==null||city.length==0) {
-              db.getAllStatistics(function(err,results){
-                if (err) {
-                  r.success =false;
-                  r.msg = err;
-                  res.send(r);
-                } else {
-                  results.forEach((result)=>{
-                    var time = parseInt(Math.random()*(max-min+1)+min,10);
-                    for (var i = 0; i < time; i++) {
-                      result.ridings.push(riding);
-                    }
-                    db.updateRidngById(result._id,result,function(err,re){
-                      if (err) {
-                        r.success =false;
-                        r.msg = err;
-                        res.send(r);
-                      } else {
-                        r.success = true;
-                        r.msg = "insert riding success"
-                      }
-                    })
-                  })
-                  res.send(r);
-                }
+        db.getAllStatistics(function(err,results){
+          if (err) {
+            r.success =false;
+            r.msg = err;
+            res.send(r);
+          } else {
+            results.forEach((result)=>{
+              var time = parseInt(Math.random()*(max-min+1)+min,10);
+              for (var i = 0; i < time; i++) {
+                result.ridings.push(riding);
+              }
+              db.updateRidngById(result._id,result,function(err,re){
+                // if (err) {
+                //   r.success =false;
+                //   r.msg = err;
+                //   res.send(r);
+                // } else {
+                //   r.success = true;
+                //   r.msg = "insert riding success"
+                // }
               })
+            })
+            res.send({});
+          }
+        })
       }else
       {
 
