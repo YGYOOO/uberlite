@@ -93,7 +93,7 @@ export default class Main extends Component{
     //   // this.props.navigator.push({title: 'Main'});
     // }, 2000);
     this.retrieveStates();
-    setInterval(this.getRestTime.bind(this), 10000);
+    setInterval(this.getRestTime.bind(this), 1000);
   }
 
   state = initState;

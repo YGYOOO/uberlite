@@ -16,7 +16,8 @@ let keep_storeState = true;
 
 export default class Main extends Component{
   constructor(){
-    super();
+    super(); 
+
     var PushNotification = require('react-native-push-notification');
     PushNotification.configure({
         onRegister: (gcm_token) => {
@@ -189,7 +190,7 @@ export default class Main extends Component{
         else{
           let asyncCount = Object.keys(state).length;
           for(var key in state){
-            if(key === 'region') continue;
+            if(key === 'region' || key === 'bounceInValue') continue;
             let obj = {};
             obj[key] = state[key];
             this.setState(obj, () => {
