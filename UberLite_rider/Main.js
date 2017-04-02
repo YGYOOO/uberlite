@@ -1,11 +1,13 @@
 import React, { Component, PropTypes } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated, AsyncStorage,TouchableHighlight, Image } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated, AsyncStorage,TouchableHighlight } from 'react-native';
 import { Button, Card, COLOR, PRIMARY_COLORS, Toolbar } from 'react-native-material-design';
 import MapView from 'react-native-maps';
 import PlacesAutocomplete from './components/PlacesAutocomplete';
 import * as Animatable from 'react-native-animatable';
 import Spinner from 'react-native-spinkit';
 import StarRating from 'react-native-star-rating';
+import Image from 'react-native-image-progress';
+import Progress from 'react-native-progress/CircleSnail';
 
 import {$f} from './modules/functions.js';
 import {themeColor, MKThemeColor} from './style/Theme.js';
@@ -592,7 +594,7 @@ export default class Main extends Component{
   }
 
   showMore() {
-    this.setState({show_carPicture: !this.state.show_carPicture});
+    this.setState({show_carPicture: (this.state.show_carPicture + 1) % 3});
   }
 
   render() {
@@ -682,14 +684,41 @@ export default class Main extends Component{
           <Text>{'Phone Number: ' + this.state.driverInfo.phone_number}</Text>
           <TouchableHighlight underlayColor={'mintcream'} onPress={this.showMore.bind(this)}>
             <Text style={styles.showMoreText}>
-              {this.state.show_carPicture ? 'hide' : 'show car picture'}
+              {
+                (() => {
+                  switch (this.state.show_carPicture) {
+                    case 0:
+                      return 'show car picture';
+                    case 1:
+                      return 'show driver picture';
+                    case 2:
+                      return 'hide'
+                  }
+                })()
+              }
             </Text>
           </TouchableHighlight>
           {
-            this.state.show_carPicture ? (
-              <Image source={{uri: domain + '/img/' + this.state.driverInfo.car_picture}}
+            (() => {
+              console.log(this.state.driverInfo)
+              switch (this.state.show_carPicture) {
+                case 0:
+                  return null;
+                case 1:
+                  return (
+                    <Image 
+                      source={{uri: domain + '/img/' + this.state.driverInfo.car_picture}}
+                      style={{width: 300, height: 300}}
+                      indicator={Progress}
+                    />
+                  );
+                case 2:
+                  return (
+                    <Image source={{uri: domain + '/img/' + this.state.driverInfo.driver_picture}}
           style={{width: 300, height: 300}} />
-            ) : null
+                  );
+              }
+            })()
           }
         </Card>
       </Animatable.View>

@@ -51,7 +51,7 @@ const initState = {
   show_checkoutBoard: false,
   show_thanksBoard: false,
   show_driverMarker: false,
-  show_carPicture: false,
+  show_carPicture: 0,
   driverInfo: null,
   driverHeading: 0,
   starCount: 4,
